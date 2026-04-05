@@ -24,6 +24,12 @@ class guide_colorsteps(guide_colorbar):
         Number of color bins.
     show_limits : bool
         Whether to show limits at the ends of the guide.
+
+    Notes
+    -----
+    Stepped rendering is not yet fully distinct from a standard
+    colorbar. This guide currently renders similarly to
+    :class:`guide_colorbar`.
     """
 
     nbin: int = 5

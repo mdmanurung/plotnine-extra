@@ -22,6 +22,12 @@ class guide_bins(guide_legend):
     show_limits : bool
         Whether to show the limits of the bins at the
         boundaries.
+
+    Notes
+    -----
+    Bin-boundary visual rendering is not yet distinct from a
+    standard legend. This guide currently renders identically
+    to :class:`guide_legend`.
     """
 
     show_limits: bool = False

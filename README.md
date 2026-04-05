@@ -112,6 +112,48 @@ Building a complex plot piece by piece.
 
    <img width="90%" align="center" src="https://github.com/has2k1/plotnine/blob/logos/doc/images/readme-image-5alt.png?raw=true">
 
+## Additional Features (beyond upstream plotnine)
+
+This fork extends plotnine with additional ggplot2 features not yet available
+in the [upstream repository](https://github.com/has2k1/plotnine):
+
+### New Geoms
+- `geom_contour` / `geom_contour_filled` — Contour lines and filled contour polygons from gridded data
+- `geom_curve` — Curved line segments between points (using `FancyArrowPatch`)
+- `geom_density_2d_filled` — Filled 2D density contours
+- `geom_function` — Draw a function as a continuous curve
+- `geom_hex` — Hexagonal binned heatmaps with custom hex rendering
+- `geom_sf` / `geom_sf_label` / `geom_sf_text` — Simple feature (GeoDataFrame) geometries, labels, and text
+
+### New Stats
+- `stat_contour` / `stat_contour_filled` — Contour computation from x, y, z grid data (via `contourpy`)
+- `stat_density_2d_filled` — Filled 2D kernel density contours
+- `stat_bin_hex` / `stat_summary_hex` — Hexagonal binning and hex-binned summaries
+- `stat_summary_2d` — 2D binned summaries with user-supplied functions
+- `stat_spoke` — Convert angle/radius to line segment endpoints
+- `stat_sf` / `stat_sf_coordinates` — Simple feature pass-through and centroid extraction
+- `stat_align` — Align observations across groups by interpolation
+- `stat_connect` — Connect observations in x-order
+- `stat_manual` — Explicit pass-through stat
+
+### New Scales
+- **Binned color/fill scales**: `scale_color_binned`, `scale_color_steps`, `scale_color_steps2`, `scale_color_stepsn`, `scale_color_fermenter` (and `fill` / British spelling variants)
+- **Linewidth scales**: `scale_linewidth`, `scale_linewidth_continuous`, `scale_linewidth_discrete`, `scale_linewidth_ordinal`
+- **Viridis convenience scales**: `scale_color_viridis_c`, `scale_color_viridis_d`, `scale_fill_viridis_c`, `scale_fill_viridis_d`
+- **Secondary axis**: `sec_axis`, `dup_axis` (API specification; rendering not yet integrated)
+
+### New Coords
+- `coord_polar` — Polar coordinate system (uses matplotlib polar projection)
+- `coord_radial` — Radial coordinates (extended polar with `r_axis_inside`)
+- `coord_quickmap` — Quick map coordinates with Mercator aspect ratio correction
+- `coord_sf` — Coordinate system for simple features with CRS-aware aspect ratio
+
+### New Guides
+- `guide_none` — Suppress legend/colorbar for an aesthetic
+- `guide_bins` — Binned legend guide (API placeholder)
+- `guide_colorsteps` / `guide_coloursteps` — Stepped colorbar guide (API placeholder)
+- `guide_custom` — Custom guide with user-provided matplotlib artists
+
 ## Installation
 
 Official release

@@ -123,6 +123,3 @@ class stat_density_2d(stat):
             )
 
         return data
-
-
-# contour_lines is now in _contour.py and imported at the top

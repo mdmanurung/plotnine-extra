@@ -25,6 +25,13 @@ class sec_axis:
         Break points for the secondary axis.
     labels : callable or array_like, optional
         Labels for the break points.
+
+    Notes
+    -----
+    This is a data specification class. Secondary axis rendering
+    is not yet integrated into the plotnine pipeline — the axis
+    will not be drawn on plots. This class is provided for API
+    compatibility with ggplot2.
     """
 
     def __init__(
