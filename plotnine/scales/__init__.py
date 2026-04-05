@@ -33,6 +33,8 @@ from .scale_color import (
     scale_color_grey,
     scale_color_hue,
     scale_color_ordinal,
+    scale_color_viridis_c,
+    scale_color_viridis_d,
     scale_colour_brewer,
     scale_colour_cmap,
     scale_colour_cmap_d,
@@ -48,6 +50,8 @@ from .scale_color import (
     scale_colour_grey,
     scale_colour_hue,
     scale_colour_ordinal,
+    scale_colour_viridis_c,
+    scale_colour_viridis_d,
     scale_fill_brewer,
     scale_fill_cmap,
     scale_fill_cmap_d,
@@ -63,6 +67,27 @@ from .scale_color import (
     scale_fill_grey,
     scale_fill_hue,
     scale_fill_ordinal,
+    scale_fill_viridis_c,
+    scale_fill_viridis_d,
+)
+
+# binned color
+from .scale_color_binned import (
+    scale_color_binned,
+    scale_color_fermenter,
+    scale_color_steps,
+    scale_color_steps2,
+    scale_color_stepsn,
+    scale_colour_binned,
+    scale_colour_fermenter,
+    scale_colour_steps,
+    scale_colour_steps2,
+    scale_colour_stepsn,
+    scale_fill_binned,
+    scale_fill_fermenter,
+    scale_fill_steps,
+    scale_fill_steps2,
+    scale_fill_stepsn,
 )
 
 # identity
@@ -81,6 +106,14 @@ from .scale_identity import (
 from .scale_linetype import (
     scale_linetype,
     scale_linetype_discrete,
+)
+
+# linewidth
+from .scale_linewidth import (
+    scale_linewidth,
+    scale_linewidth_continuous,
+    scale_linewidth_discrete,
+    scale_linewidth_ordinal,
 )
 
 # manual
@@ -139,6 +172,9 @@ from .scale_xy import (
     scale_y_timedelta,
 )
 
+# secondary axis
+from .sec_axis import dup_axis, sec_axis
+
 __all__ = (
     # color
     "scale_color_brewer",
@@ -171,6 +207,21 @@ __all__ = (
     "scale_colour_hue",
     "scale_color_datetime",
     "scale_colour_datetime",
+    "scale_color_viridis_c",
+    "scale_color_viridis_d",
+    "scale_colour_viridis_c",
+    "scale_colour_viridis_d",
+    # binned color
+    "scale_color_binned",
+    "scale_colour_binned",
+    "scale_color_steps",
+    "scale_colour_steps",
+    "scale_color_steps2",
+    "scale_colour_steps2",
+    "scale_color_stepsn",
+    "scale_colour_stepsn",
+    "scale_color_fermenter",
+    "scale_colour_fermenter",
     # fill
     "scale_fill_brewer",
     "scale_fill_cmap",
@@ -187,12 +238,25 @@ __all__ = (
     "scale_fill_gray",
     "scale_fill_hue",
     "scale_fill_datetime",
+    "scale_fill_viridis_c",
+    "scale_fill_viridis_d",
+    # binned fill
+    "scale_fill_binned",
+    "scale_fill_steps",
+    "scale_fill_steps2",
+    "scale_fill_stepsn",
+    "scale_fill_fermenter",
     # alpha
     "scale_alpha",
     "scale_alpha_discrete",
     "scale_alpha_ordinal",
     "scale_alpha_continuous",
     "scale_alpha_datetime",
+    # linewidth
+    "scale_linewidth",
+    "scale_linewidth_continuous",
+    "scale_linewidth_discrete",
+    "scale_linewidth_ordinal",
     # linetype
     "scale_linetype",
     "scale_linetype_discrete",
@@ -251,4 +315,7 @@ __all__ = (
     "ylim",
     "lims",
     "expand_limits",
+    # secondary axis
+    "sec_axis",
+    "dup_axis",
 )

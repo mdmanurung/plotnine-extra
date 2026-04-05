@@ -12,14 +12,20 @@ from .geom_bin_2d import geom_bin2d, geom_bin_2d
 from .geom_blank import geom_blank
 from .geom_boxplot import geom_boxplot
 from .geom_col import geom_col
+from .geom_contour import geom_contour
+from .geom_contour_filled import geom_contour_filled
 from .geom_count import geom_count
 from .geom_crossbar import geom_crossbar
+from .geom_curve import geom_curve
 from .geom_density import geom_density
 from .geom_density_2d import geom_density_2d
+from .geom_density_2d_filled import geom_density_2d_filled
 from .geom_dotplot import geom_dotplot
 from .geom_errorbar import geom_errorbar
 from .geom_errorbarh import geom_errorbarh
 from .geom_freqpoly import geom_freqpoly
+from .geom_function import geom_function
+from .geom_hex import geom_hex
 from .geom_histogram import geom_histogram
 from .geom_hline import geom_hline
 from .geom_jitter import geom_jitter
@@ -40,6 +46,9 @@ from .geom_rect import geom_rect
 from .geom_ribbon import geom_ribbon
 from .geom_rug import geom_rug
 from .geom_segment import geom_segment
+from .geom_sf import geom_sf
+from .geom_sf_label import geom_sf_label
+from .geom_sf_text import geom_sf_text
 from .geom_sina import geom_sina
 from .geom_smooth import geom_smooth
 from .geom_spoke import geom_spoke
@@ -61,14 +70,20 @@ __all__ = (
     "geom_blank",
     "geom_boxplot",
     "geom_col",
+    "geom_contour",
+    "geom_contour_filled",
     "geom_count",
     "geom_crossbar",
+    "geom_curve",
     "geom_density",
     "geom_density_2d",
+    "geom_density_2d_filled",
     "geom_dotplot",
     "geom_errorbar",
     "geom_errorbarh",
     "geom_freqpoly",
+    "geom_function",
+    "geom_hex",
     "geom_histogram",
     "geom_hline",
     "geom_jitter",
@@ -90,6 +105,9 @@ __all__ = (
     "geom_ribbon",
     "geom_rug",
     "geom_segment",
+    "geom_sf",
+    "geom_sf_label",
+    "geom_sf_text",
     "geom_sina",
     "geom_smooth",
     "geom_spoke",

@@ -6,7 +6,6 @@ import numpy as np
 import pandas as pd
 
 from ..doctools import document
-from ._contour import contour_lines
 from .density import get_var_type, kde
 from .stat import stat
 
@@ -15,9 +14,9 @@ if TYPE_CHECKING:
 
 
 @document
-class stat_density_2d(stat):
+class stat_density_2d_filled(stat):
     """
-    Compute 2D kernel density estimation
+    Compute filled 2D kernel density estimation contours
 
     {usage}
 
@@ -25,7 +24,7 @@ class stat_density_2d(stat):
     ----------
     {common_parameters}
     contour : bool, default=True
-        Whether to create contours of the 2d density estimate.
+        Whether to create filled contours of the 2d density estimate.
     n : int, default=64
         Number of equally spaced points at which the density is to
         be estimated. For efficient computation, it should be a power
@@ -40,10 +39,8 @@ class stat_density_2d(stat):
 
     See Also
     --------
-    plotnine.geom_density_2d : The default `geom` for this `stat`.
-    statsmodels.nonparametric.kernel_density.KDEMultivariate
-    scipy.stats.gaussian_kde
-    sklearn.neighbors.KernelDensity
+    plotnine.geom_density_2d_filled : The default `geom` for this `stat`.
+    plotnine.stat_density_2d : Unfilled variant.
     """
 
     _aesthetics_doc = """
@@ -52,18 +49,13 @@ class stat_density_2d(stat):
     **Options for computed aesthetics**
 
     ```python
-    "level"     # density level of a contour
-    "density"   # Computed density at a point
+    "level"     # density level of a contour band
     "piece"     # Numeric id of a contour in a given group
     ```
-
-    `level` is only relevant when contours are computed. `density`
-    is available only when no contours are computed. `piece` is
-    largely irrelevant.
     """
     REQUIRED_AES = {"x"}
     DEFAULT_PARAMS = {
-        "geom": "density_2d",
+        "geom": "density_2d_filled",
         "contour": True,
         "package": "statsmodels",
         "kde_params": None,
@@ -96,7 +88,6 @@ class stat_density_2d(stat):
         _x = np.linspace(range_x[0], range_x[1], params["n"])
         _y = np.linspace(range_y[0], range_y[1], params["n"])
 
-        # The grid must have a "similar" shape (n, p) to the var_data
         X, Y = np.meshgrid(_x, _y)
         x = cast("FloatArrayLike", data["x"].to_numpy())
         y = cast("FloatArrayLike", data["y"].to_numpy())
@@ -106,8 +97,7 @@ class stat_density_2d(stat):
 
         if params["contour"]:
             Z = density.reshape(len(_x), len(_y))
-            data = contour_lines(X, Y, Z, params["levels"])
-            # Each piece should have a distinct group
+            data = contour_filled(X, Y, Z, params["levels"])
             groups = str(group) + "-00" + data["piece"].astype(str)
             data["group"] = groups
         else:
@@ -125,4 +115,56 @@ class stat_density_2d(stat):
         return data
 
 
-# contour_lines is now in _contour.py and imported at the top
+def contour_filled(X, Y, Z, levels: int | FloatArrayLike):
+    """
+    Calculate filled contour polygons
+    """
+    from contourpy import contour_generator
+
+    X = np.asarray(X, dtype=np.float64)
+    Y = np.asarray(Y, dtype=np.float64)
+    Z = np.asarray(Z, dtype=np.float64)
+    zmin, zmax = Z.min(), Z.max()
+    cgen = contour_generator(
+        X, Y, Z, name="mpl2014", corner_mask=False, chunk_size=0
+    )
+
+    if isinstance(levels, int):
+        from mizani.breaks import breaks_extended
+
+        levels = breaks_extended(n=levels)((zmin, zmax))
+
+    segments = []
+    piece_ids = []
+    level_values = []
+    start_pid = 1
+
+    for i in range(len(levels) - 1):
+        level_low = levels[i]
+        level_high = levels[i + 1]
+        vertices, *_ = cgen.create_filled_contour(level_low, level_high)
+        for pid, piece in enumerate(vertices, start=start_pid):
+            n = len(piece)  # pyright: ignore
+            segments.append(piece)
+            piece_ids.append(np.repeat(pid, n))
+            level_values.append(np.repeat(level_low, n))
+            start_pid = pid + 1
+
+    if segments:
+        x, y = np.vstack(segments).T
+        piece = np.hstack(piece_ids)
+        level = np.hstack(level_values)
+    else:
+        x, y = [], []
+        piece = []
+        level = []
+
+    data = pd.DataFrame(
+        {
+            "x": x,
+            "y": y,
+            "level": level,
+            "piece": piece,
+        }
+    )
+    return data
