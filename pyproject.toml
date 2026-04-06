@@ -56,11 +56,13 @@ dev = [
 
 [project.urls]
 Homepage = "https://github.com/mdmanurung/plotnine-extra"
-Repository = "https://github.com/mdmanurung/plotnine-extra"
+Repository = "https://github.com/mdmanurung/plotnine-extra.git"
 "Bug Tracker" = "https://github.com/mdmanurung/plotnine-extra/issues"
 
 ########## Build System ##########
 [build-system]
+# Pin setuptools below 75 to avoid PEP 639 license-expression metadata
+# that is not yet supported by all tooling (e.g. twine check).
 requires = [
     "setuptools>=59,<75",
     "wheel",
