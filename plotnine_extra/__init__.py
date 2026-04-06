@@ -3,7 +3,7 @@ plotnine_extra: Extension package for plotnine
 ==============================================
 
 This package extends plotnine with additional geoms, stats,
-plot composition, and animation support.
+positions, themes, plot composition, and animation support.
 
 Usage
 -----
@@ -18,7 +18,19 @@ Geoms:
     - geom_pointdensity: Scatterplot with density estimation
     - geom_spoke: Line segments parameterised by angle/radius
     - geom_bracket: Significance brackets with labels
+    - geom_beeswarm: Beeswarm categorical scatter plots
+    - geom_quasirandom: Quasi-random categorical scatter plots
+    - geom_richtext: Rich text labels with markdown support
+    - geom_textbox: Text boxes with word wrapping
     - annotation_stripes: Alternating background stripes
+
+Positions:
+    - position_beeswarm: Beeswarm point positioning
+    - position_quasirandom: Quasi-random point positioning
+
+Themes:
+    - element_markdown: Theme element for markdown-styled text
+    - element_textbox_simple: Theme element for boxed text
 
 Stats:
     - stat_pointdensity: Density estimation at each point
@@ -66,9 +78,17 @@ from .composition import (
 )
 from .geoms import (
     annotation_stripes,
+    geom_beeswarm,
     geom_bracket,
     geom_pointdensity,
+    geom_quasirandom,
+    geom_richtext,
     geom_spoke,
+    geom_textbox,
+)
+from .positions import (
+    position_beeswarm,
+    position_quasirandom,
 )
 from .stats import (
     stat_anova_test,
@@ -88,6 +108,10 @@ from .stats import (
     stat_stars,
     stat_welch_anova_test,
 )
+from .themes import (
+    element_markdown,
+    element_textbox_simple,
+)
 
 __version__ = "0.1.0"
 
@@ -95,9 +119,19 @@ __version__ = "0.1.0"
 _extra_all = (
     # Geoms
     "annotation_stripes",
+    "geom_beeswarm",
     "geom_bracket",
     "geom_pointdensity",
+    "geom_quasirandom",
+    "geom_richtext",
     "geom_spoke",
+    "geom_textbox",
+    # Positions
+    "position_beeswarm",
+    "position_quasirandom",
+    # Theme elements
+    "element_markdown",
+    "element_textbox_simple",
     # Stats
     "stat_anova_test",
     "stat_central_tendency",
