@@ -20,8 +20,8 @@ ToothGrowth
     Column    Type         Description
     ========  ===========  ==========================================
     len       float64      Tooth length
-    supp      category     Supplement type (VC = ascorbic acid,
-                           OJ = orange juice)
+    supp      category     Supplement type (OJ = orange juice,
+                           VC = ascorbic acid)
     dose      float64      Dose in milligrams/day (0.5, 1.0, 2.0)
     ========  ===========  ==========================================
 
