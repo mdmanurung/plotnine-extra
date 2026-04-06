@@ -47,15 +47,15 @@ class Compose:
 
     `/`
 
-    :   Arrange operands side by side.
-        Powered by the subclass
-        [](`~plotnine_extra.composition.Beside`).
-
-    `|`
-
     :   Arrange operands vertically.
         Powered by the subclass
         [](`~plotnine_extra.composition.Stack`).
+
+    `|`
+
+    :   Arrange operands side by side.
+        Powered by the subclass
+        [](`~plotnine_extra.composition.Beside`).
 
     `-`
 
@@ -442,7 +442,7 @@ class Compose:
         old = self.__dict__
         new = result.__dict__
 
-        shallow = {"figure", "gridsspec", "__copy"}
+        shallow = {"figure", "_gridspec", "__copy"}
         for key, item in old.items():
             if key in shallow:
                 new[key] = item

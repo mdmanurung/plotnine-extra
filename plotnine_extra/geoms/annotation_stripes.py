@@ -159,7 +159,7 @@ class _geom_stripes(geom):
                 n_stripes += 1
                 xmax = np.insert(xmax, 0, xmin[0])
                 xmin = np.insert(xmin, 0, range[0])
-            if range[1] > breaks[1]:
+            if range[1] > breaks[-1]:
                 n_stripes += 1
                 xmin = np.append(xmin, xmax[-1])
                 xmax = np.append(xmax, range[1])

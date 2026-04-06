@@ -29,7 +29,7 @@ default="statsmodels"
 
     See Also
     --------
-    plotnine.geom_density_2d : The default `geom` for this `stat`.
+    plotnine.geom_point : The default `geom` for this `stat`.
     statsmodels.nonparametric.kde.KDEMultivariate
     scipy.stats.gaussian_kde
     sklearn.neighbors.KernelDensity
@@ -48,7 +48,7 @@ default="statsmodels"
     REQUIRED_AES = {"x", "y"}
     DEFAULT_AES = {"color": after_stat("density")}
     DEFAULT_PARAMS = {
-        "geom": "density_2d",
+        "geom": "point",
         "position": "identity",
         "na_rm": False,
         "package": "statsmodels",
