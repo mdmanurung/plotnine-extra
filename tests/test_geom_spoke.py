@@ -1,6 +1,5 @@
 import numpy as np
 import pandas as pd
-
 from plotnine import aes, ggplot
 
 from plotnine_extra import geom_spoke

@@ -4,7 +4,6 @@ import typing
 from copy import deepcopy
 
 from matplotlib.animation import ArtistAnimation
-
 from plotnine.exceptions import PlotnineError
 
 if typing.TYPE_CHECKING:
@@ -13,7 +12,6 @@ if typing.TYPE_CHECKING:
     from matplotlib.artist import Artist
     from matplotlib.axes import Axes
     from matplotlib.figure import Figure
-
     from plotnine import ggplot
     from plotnine.scales.scale import scale
 
@@ -249,8 +247,7 @@ class PlotnineAnimation(ArtistAnimation):
         plot = deepcopy(plot)
         plot.figure = first_plot.figure
         plot.axs = first_plot.axs
-        plot._gridspec = first_plot._sub_gridspec
-        plot._sub_gridspec = first_plot._sub_gridspec
+        plot._gridspec = first_plot._gridspec
         with plot_context(plot):
             plot._build()
             _ = plot.facet.setup(plot)

@@ -1,7 +1,6 @@
 import numpy as np
 import pandas as pd
 import pytest
-
 from plotnine import (
     aes,
     coord_flip,

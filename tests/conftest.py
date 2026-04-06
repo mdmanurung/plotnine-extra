@@ -9,14 +9,15 @@ from pathlib import Path
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 from matplotlib.testing.compare import compare_images
-
 from plotnine import ggplot, theme
-from plotnine.themes.theme import DEFAULT_RCPARAMS
-
-from plotnine_extra.composition import (
+from plotnine.composition import (
     Beside,
     Compose,
     Stack,
+)
+from plotnine.themes.theme import DEFAULT_RCPARAMS
+
+from plotnine_extra.composition import (
     plot_annotation,
 )
 

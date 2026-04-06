@@ -2,7 +2,6 @@ from typing import TYPE_CHECKING, cast
 
 import numpy as np
 import pandas as pd
-
 from plotnine.doctools import document
 from plotnine.mapping.evaluation import after_stat
 from plotnine.stats.density import get_var_type, kde
@@ -50,6 +49,8 @@ default="statsmodels"
     DEFAULT_AES = {"color": after_stat("density")}
     DEFAULT_PARAMS = {
         "geom": "density_2d",
+        "position": "identity",
+        "na_rm": False,
         "package": "statsmodels",
         "kde_params": None,
     }

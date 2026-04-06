@@ -24,7 +24,6 @@ if TYPE_CHECKING:
     from typing import Iterator
 
     from matplotlib.figure import Figure
-
     from plotnine._mpl.gridspec import p9GridSpec
     from plotnine._mpl.layout_manager._composition_side_space import (
         CompositionSideSpaces,
@@ -481,7 +480,6 @@ class Compose:
             return
 
         import matplotlib.pyplot as plt
-
         from plotnine._mpl.gridspec import p9GridSpec
 
         figure = plt.figure()

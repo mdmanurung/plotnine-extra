@@ -5,7 +5,6 @@ from itertools import cycle, islice
 
 import numpy as np
 import pandas as pd
-
 from plotnine.coords import coord_flip
 from plotnine.geoms.annotate import annotate
 from plotnine.geoms.geom import geom
@@ -17,7 +16,6 @@ if typing.TYPE_CHECKING:
     from typing import Any, Literal, Sequence
 
     from matplotlib.axes import Axes
-
     from plotnine.coords.coord import coord
     from plotnine.facets.layout import Layout
     from plotnine.iapi import panel_view
@@ -82,6 +80,9 @@ class _geom_stripes(geom):
     DEFAULT_AES = {}
     REQUIRED_AES = set()
     DEFAULT_PARAMS = {
+        "stat": "identity",
+        "position": "identity",
+        "na_rm": False,
         "color": None,
         "fill": ("#AAAAAA", "#CCCCCC"),
         "linetype": "solid",

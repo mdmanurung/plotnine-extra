@@ -1,6 +1,5 @@
 import matplotlib.pyplot as plt
 import pytest
-
 from plotnine import labs, lims, qplot, theme_minimal
 from plotnine.exceptions import PlotnineError
 

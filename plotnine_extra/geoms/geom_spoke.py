@@ -3,7 +3,6 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import numpy as np
-
 from plotnine.doctools import document
 from plotnine.geoms.geom_segment import geom_segment
 
