@@ -18,6 +18,7 @@ from plotnine.composition import (
 from plotnine.themes.theme import DEFAULT_RCPARAMS
 
 from plotnine_extra.composition import (
+    Wrap,
     plot_annotation,
 )
 
@@ -135,7 +136,7 @@ ggplot.build_test = build_test
 
 def pytest_assertrepr_compare(op, left, right):
     if (
-        isinstance(left, (ggplot, Compose))
+        isinstance(left, (ggplot, Compose, Wrap))
         and isinstance(right, str)
         and op == "=="
     ):
@@ -266,3 +267,4 @@ def composition_equals(cmp: Compose, name: str) -> bool:
 Compose.__eq__ = composition_equals  # pyright: ignore[reportAttributeAccessIssue]
 Beside.__eq__ = composition_equals  # pyright: ignore[reportAttributeAccessIssue]
 Stack.__eq__ = composition_equals  # pyright: ignore[reportAttributeAccessIssue]
+Wrap.__eq__ = composition_equals  # pyright: ignore[reportAttributeAccessIssue]
