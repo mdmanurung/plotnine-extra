@@ -10,6 +10,7 @@ from .stat_mean import stat_mean
 from .stat_overlay_normal_density import stat_overlay_normal_density
 from .stat_pointdensity import stat_pointdensity
 from .stat_pvalue_manual import stat_pvalue_manual
+from .stat_pwc import stat_pwc
 from .stat_regline_equation import stat_regline_equation
 from .stat_stars import stat_stars
 from .stat_welch_anova_test import stat_welch_anova_test
@@ -27,6 +28,7 @@ __all__ = (
     "stat_overlay_normal_density",
     "stat_pointdensity",
     "stat_pvalue_manual",
+    "stat_pwc",
     "stat_regline_equation",
     "stat_stars",
     "stat_welch_anova_test",

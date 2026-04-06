@@ -36,6 +36,7 @@ Stats:
     - stat_welch_anova_test: Welch ANOVA annotations
     - stat_friedman_test: Friedman test annotations
     - stat_pvalue_manual: Manual p-value placement
+    - stat_pwc: Pairwise comparison p-values with brackets
 
 Composition:
     - Compose, Beside, Stack, Wrap: Plot composition operators
@@ -79,6 +80,7 @@ from .stats import (
     stat_overlay_normal_density,
     stat_pointdensity,
     stat_pvalue_manual,
+    stat_pwc,
     stat_regline_equation,
     stat_stars,
     stat_welch_anova_test,
@@ -106,6 +108,7 @@ _extra_all = (
     "stat_overlay_normal_density",
     "stat_pointdensity",
     "stat_pvalue_manual",
+    "stat_pwc",
     "stat_regline_equation",
     "stat_stars",
     "stat_welch_anova_test",

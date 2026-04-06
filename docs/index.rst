@@ -23,7 +23,7 @@ Extra Components
 ``stat_cor``, ``stat_regline_equation``,
 ``stat_overlay_normal_density``, ``stat_compare_means``,
 ``stat_anova_test``, ``stat_kruskal_test``, ``stat_welch_anova_test``,
-``stat_friedman_test``, ``stat_pvalue_manual``
+``stat_friedman_test``, ``stat_pvalue_manual``, ``stat_pwc``
 
 **Composition** – ``Compose``, ``Beside``, ``Stack``, ``Wrap``,
 ``plot_layout``, ``plot_annotation``, ``plot_spacer``

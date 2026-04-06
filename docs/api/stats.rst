@@ -122,3 +122,11 @@ stat_pvalue_manual
    :members:
    :undoc-members:
    :show-inheritance:
+
+stat_pwc
+--------
+
+.. autoclass:: stat_pwc
+   :members:
+   :undoc-members:
+   :show-inheritance:
