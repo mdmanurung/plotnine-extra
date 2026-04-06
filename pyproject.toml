@@ -24,6 +24,7 @@ classifiers = [
 ]
 dependencies = [
     "plotnine>=0.15.3",
+    "scipy>=1.10.0",
 ]
 requires-python = ">=3.10"
 

@@ -17,10 +17,25 @@ Extra Components
 Geoms:
     - geom_pointdensity: Scatterplot with density estimation
     - geom_spoke: Line segments parameterised by angle/radius
+    - geom_bracket: Significance brackets with labels
     - annotation_stripes: Alternating background stripes
 
 Stats:
     - stat_pointdensity: Density estimation at each point
+    - stat_mean: Group mean points (centroids)
+    - stat_chull: Convex hull of point groups
+    - stat_stars: Star segments from centroid to data points
+    - stat_central_tendency: Mean/median/mode lines
+    - stat_conf_ellipse: Confidence ellipses
+    - stat_cor: Correlation coefficients with p-values
+    - stat_regline_equation: Regression equations with R²
+    - stat_overlay_normal_density: Normal density overlays
+    - stat_compare_means: Group comparison p-values
+    - stat_anova_test: ANOVA test annotations
+    - stat_kruskal_test: Kruskal-Wallis test annotations
+    - stat_welch_anova_test: Welch ANOVA annotations
+    - stat_friedman_test: Friedman test annotations
+    - stat_pvalue_manual: Manual p-value placement
 
 Composition:
     - Compose, Beside, Stack, Wrap: Plot composition operators
@@ -45,8 +60,29 @@ from .composition import (
     plot_layout,
     plot_spacer,
 )
-from .geoms import annotation_stripes, geom_pointdensity, geom_spoke
-from .stats import stat_pointdensity
+from .geoms import (
+    annotation_stripes,
+    geom_bracket,
+    geom_pointdensity,
+    geom_spoke,
+)
+from .stats import (
+    stat_anova_test,
+    stat_central_tendency,
+    stat_chull,
+    stat_compare_means,
+    stat_conf_ellipse,
+    stat_cor,
+    stat_friedman_test,
+    stat_kruskal_test,
+    stat_mean,
+    stat_overlay_normal_density,
+    stat_pointdensity,
+    stat_pvalue_manual,
+    stat_regline_equation,
+    stat_stars,
+    stat_welch_anova_test,
+)
 
 __version__ = "0.1.0"
 
@@ -54,10 +90,25 @@ __version__ = "0.1.0"
 _extra_all = (
     # Geoms
     "annotation_stripes",
+    "geom_bracket",
     "geom_pointdensity",
     "geom_spoke",
     # Stats
+    "stat_anova_test",
+    "stat_central_tendency",
+    "stat_chull",
+    "stat_compare_means",
+    "stat_conf_ellipse",
+    "stat_cor",
+    "stat_friedman_test",
+    "stat_kruskal_test",
+    "stat_mean",
+    "stat_overlay_normal_density",
     "stat_pointdensity",
+    "stat_pvalue_manual",
+    "stat_regline_equation",
+    "stat_stars",
+    "stat_welch_anova_test",
     # Composition
     "Compose",
     "Beside",
