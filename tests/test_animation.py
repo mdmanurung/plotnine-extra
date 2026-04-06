@@ -2,8 +2,9 @@ import matplotlib.pyplot as plt
 import pytest
 
 from plotnine import labs, lims, qplot, theme_minimal
-from plotnine.animation import PlotnineAnimation
 from plotnine.exceptions import PlotnineError
+
+from plotnine_extra.animation import PlotnineAnimation
 
 plt.switch_backend("Agg")  # TravisCI needs this
 

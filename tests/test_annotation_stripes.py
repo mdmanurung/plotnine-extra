@@ -4,13 +4,14 @@ import pytest
 
 from plotnine import (
     aes,
-    annotation_stripes,
     coord_flip,
     facet_wrap,
     geom_point,
     geom_vline,
     ggplot,
 )
+
+from plotnine_extra import annotation_stripes
 
 n = 9
 data = pd.DataFrame({"x": np.arange(n) % 3 + 1, "y": range(n)})

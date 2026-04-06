@@ -5,10 +5,11 @@ from plotnine import (
     aes,
     after_stat,
     geom_point,
-    geom_pointdensity,
     ggplot,
     scale_size_radius,
 )
+
+from plotnine_extra import geom_pointdensity
 
 n = 16  # Some even number > 2
 

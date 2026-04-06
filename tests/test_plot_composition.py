@@ -12,7 +12,8 @@ from plotnine import (
 )
 from plotnine._utils.yippie import geom as g
 from plotnine._utils.yippie import legend, plot, rotate, tag
-from plotnine.composition import plot_annotation, plot_layout
+
+from plotnine_extra.composition import plot_annotation, plot_layout
 
 
 def test_basic_horizontal_align_resize():
