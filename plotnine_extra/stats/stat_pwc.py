@@ -140,6 +140,14 @@ class stat_pwc(stat):
         "group2",
     }
 
+    def __init__(self, mapping=None, data=None, **kwargs):
+        super().__init__(mapping, data, **kwargs)
+        # Remove 'label' from _kwargs so it is not forwarded
+        # to the geom as a static aesthetic value. The 'label'
+        # kwarg is a stat parameter controlling format (e.g.
+        # "p.signif"), not a literal label string.
+        self._kwargs.pop("label", None)
+
     def compute_panel(self, data, scales):
         method = self.params["method"]
         paired = self.params["paired"]

@@ -571,6 +571,19 @@ class TestStatPwc:
         )
         p.draw_test()
 
+    def test_signif_label_not_literal(self):
+        """Label should be a significance symbol, not the
+        literal string 'p.signif'."""
+        s = stat_pwc(label="p.signif")
+        data = grouped_data.copy()
+        data["x"] = pd.Categorical(data["x"]).codes + 1.0
+        result = s.compute_panel(data, None)
+        valid_symbols = {"****", "***", "**", "*", "ns"}
+        for lbl in result["label"]:
+            assert lbl in valid_symbols, (
+                f"Expected significance symbol, got '{lbl}'"
+            )
+
     def test_adj_signif_label(self):
         """Test adjusted significance labels."""
         p = (
