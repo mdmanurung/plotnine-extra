@@ -57,7 +57,8 @@ class stat_pwc(stat):
     label : str, default="p.format"
         Label format. One of ``"p.format"``,
         ``"p.signif"``, ``"p.adj.format"``,
-        ``"p.adj.signif"``, ``"p.format.signif"``.
+        ``"p.adj.signif"``, ``"p.format.signif"``,
+        ``"p.adj.format.signif"``.
     hide_ns : bool, default=False
         If ``True``, hide non-significant comparisons.
     p_digits : int, default=3
@@ -438,7 +439,8 @@ def _adjust_pvalues(
         return result
 
     elif method == "hommel":
-        # Hommel's method - use Bonferroni as fallback
+        # Hommel's method is complex; using Bonferroni
+        # as a conservative approximation
         return np.minimum(p * n, 1.0)
 
     else:
