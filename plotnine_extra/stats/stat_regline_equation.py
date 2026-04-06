@@ -4,6 +4,8 @@ from plotnine.doctools import document
 from plotnine.mapping.evaluation import after_stat
 from plotnine.stats.stat import stat
 
+from ._label_utils import compute_label_position
+
 
 @document
 class stat_regline_equation(stat):
@@ -105,11 +107,13 @@ class stat_regline_equation(stat):
         label = f"{eq}, R² = {rr:.2f}"
 
         # Position the label
-        x_pos = _npc_to_data(
-            self.params["label_x_npc"], x.min(), x.max()
+        x_pos = compute_label_position(
+            x.min(), x.max(),
+            self.params["label_x_npc"],
         )
-        y_pos = _npc_to_data(
-            self.params["label_y_npc"], y.min(), y.max()
+        y_pos = compute_label_position(
+            y.min(), y.max(),
+            self.params["label_y_npc"],
         )
 
         return pd.DataFrame(
@@ -179,19 +183,3 @@ def _format_equation(coeffs, degree):
             eq += f" + {part}"
     return eq
 
-
-def _npc_to_data(npc, data_min, data_max):
-    """Convert normalized plot coordinates to data coordinates."""
-    npc_map = {
-        "left": 0.05,
-        "center": 0.5,
-        "middle": 0.5,
-        "right": 0.95,
-        "top": 0.95,
-        "bottom": 0.05,
-    }
-    if isinstance(npc, str):
-        npc = npc_map.get(npc, 0.5)
-
-    data_range = data_max - data_min
-    return data_min + npc * data_range

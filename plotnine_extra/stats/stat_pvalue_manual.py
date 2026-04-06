@@ -10,6 +10,7 @@ from __future__ import annotations
 
 from typing import Any
 
+import numpy as np
 import pandas as pd
 from plotnine import aes, geom_segment, geom_text
 
@@ -144,18 +145,17 @@ def stat_pvalue_manual(
 
     # Apply step increase for stacking
     df = df.reset_index(drop=True)
+    y_max = df["_y_pos"].max()
     if step_group_by and step_group_by in df.columns:
         groups = df.groupby(step_group_by)
         for _, group_df in groups:
             for i, idx in enumerate(group_df.index):
                 df.loc[idx, "_y_pos"] += (
-                    step_increase * i * df["_y_pos"].max()
+                    step_increase * i * y_max
                 )
     else:
-        for i in range(len(df)):
-            df.loc[i, "_y_pos"] += (
-                step_increase * i * df["_y_pos"].max()
-            )
+        steps = np.arange(len(df)) * step_increase * y_max
+        df["_y_pos"] += steps
 
     df["_y_pos"] += bracket_nudge_y
 
