@@ -63,7 +63,8 @@ examples/.ipynb_checkpoints
 
 # plotnine developing
 .ipynb_checkpoints/
-*.ipynb
+# Ignore notebooks except in docs/
+/*.ipynb
 
 # Translations
 *.mo
