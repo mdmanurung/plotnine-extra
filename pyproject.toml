@@ -63,6 +63,7 @@ doc = [
 
 [project.urls]
 Homepage = "https://github.com/mdmanurung/plotnine-extra"
+Documentation = "https://mdmanurung.github.io/plotnine-extra"
 Repository = "https://github.com/mdmanurung/plotnine-extra.git"
 "Bug Tracker" = "https://github.com/mdmanurung/plotnine-extra/issues"
 
