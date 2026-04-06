@@ -1,166 +1,110 @@
-# plotnine <img width="20%" align="right" src="https://github.com/has2k1/plotnine/blob/logos/doc/images/logo-512.png?raw=true">
+# plotnine-extra
 
-[![Release](https://img.shields.io/pypi/v/plotnine.svg)](https://pypi.python.org/pypi/plotnine)
-[![License](https://img.shields.io/pypi/l/plotnine.svg)](https://pypi.python.org/pypi/plotnine)
-[![DOI](https://zenodo.org/badge/89276692.svg)](https://zenodo.org/badge/latestdoi/89276692)
-[![Build Status](https://github.com/has2k1/plotnine/workflows/build/badge.svg?branch=main)](https://github.com/has2k1/plotnine/actions?query=branch%3Amain+workflow%3A%22build%22)
-[![Coverage](https://codecov.io/github/has2k1/plotnine/coverage.svg?branch=main)](https://codecov.io/github/has2k1/plotnine?branch=main)
-
-plotnine is an implementation of a *grammar of graphics* in Python
-based on [ggplot2](https://github.com/tidyverse/ggplot2).
-The grammar allows you to compose plots by explicitly mapping variables in a
-dataframe to the visual characteristics (position, color, size etc.) of objects that make up the plot.
-
-Plotting with a *grammar of graphics* is powerful. Custom (and otherwise
-complex) plots are easy to think about and build incrementally, while the
-simple plots remain simple to create.
-
-To learn more about how to use plotnine, check out the
-[documentation](https://plotnine.org). Since plotnine
-has an API similar to ggplot2, where it lacks in coverage the
-[ggplot2 documentation](http://ggplot2.tidyverse.org/reference/index.html)
-may be helpful.
-
-
-## Example
-
-```python
-from plotnine import *
-from plotnine.data import mtcars
-```
-
-Building a complex plot piece by piece.
-
-1. Scatter plot
-
-   ```python
-   (
-       ggplot(mtcars, aes("wt", "mpg"))
-       + geom_point()
-   )
-   ```
-
-   <img width="90%" align="center" src="https://github.com/has2k1/plotnine/blob/logos/doc/images/readme-image-1.png?raw=true">
-
-2. Scatter plot colored according some variable
-
-   ```python
-   (
-       ggplot(mtcars, aes("wt", "mpg", color="factor(gear)"))
-       + geom_point()
-   )
-   ```
-
-   <img width="90%" align="center" src="https://github.com/has2k1/plotnine/blob/logos/doc/images/readme-image-2.png?raw=true">
-
-3. Scatter plot colored according some variable and
-   smoothed with a linear model with confidence intervals.
-
-   ```python
-   (
-       ggplot(mtcars, aes("wt", "mpg", color="factor(gear)"))
-       + geom_point()
-       + stat_smooth(method="lm")
-   )
-   ```
-
-   <img width="90%" align="center" src="https://github.com/has2k1/plotnine/blob/logos/doc/images/readme-image-3.png?raw=true">
-
-4. Scatter plot colored according some variable,
-   smoothed with a linear model with confidence intervals and
-   plotted on separate panels.
-
-   ```python
-   (
-       ggplot(mtcars, aes("wt", "mpg", color="factor(gear)"))
-       + geom_point()
-       + stat_smooth(method="lm")
-       + facet_wrap("gear")
-   )
-   ```
-
-   <img width="90%" align="center" src="https://github.com/has2k1/plotnine/blob/logos/doc/images/readme-image-4.png?raw=true">
-
-5. Adjust the themes
-
-
-   I) Make it playful
-
-   ```python
-   (
-       ggplot(mtcars, aes("wt", "mpg", color="factor(gear)"))
-       + geom_point()
-       + stat_smooth(method="lm")
-       + facet_wrap("gear")
-       + theme_xkcd()
-   )
-   ```
-
-   <img width="90%" align="center" src="https://github.com/has2k1/plotnine/blob/logos/doc/images/readme-image-5.png?raw=true">
-
-   II) Or professional
-
-   ```python
-   (
-       ggplot(mtcars, aes("wt", "mpg", color="factor(gear)"))
-       + geom_point()
-       + stat_smooth(method="lm")
-       + facet_wrap("gear")
-       + theme_tufte()
-   )
-   ```
-
-   <img width="90%" align="center" src="https://github.com/has2k1/plotnine/blob/logos/doc/images/readme-image-5alt.png?raw=true">
+Extension package for [plotnine](https://github.com/has2k1/plotnine) that adds extra geoms, stats, plot composition, and animation support.
 
 ## Installation
 
-Official release
-
-```console
-# Using pip
-$ pip install plotnine             # 1. should be sufficient for most
-$ pip install 'plotnine[extra]'    # 2. includes extra/optional packages
-$ pip install 'plotnine[test]'     # 3. testing
-$ pip install 'plotnine[doc]'      # 4. generating docs
-$ pip install 'plotnine[dev]'      # 5. development (making releases)
-$ pip install 'plotnine[all]'      # 6. everything
-
-# Or using conda
-$ conda install -c conda-forge plotnine
-
-# Or using pixi
-$ pixi init name-of-my-project
-$ cd name-of-my-project
-$ pixi add python plotnine
+```bash
+pip install plotnine-extra
 ```
 
-Development version
+This will automatically install `plotnine` as a dependency.
 
-```console
-$ pip install git+https://github.com/has2k1/plotnine.git
+## Usage
+
+```python
+from plotnine_extra import *
 ```
 
-## Contributing
+This imports all of plotnine's public API plus the extra components provided by this package. You can also import from `plotnine` and `plotnine_extra` separately:
 
-Our documentation could use some examples, but we are looking for something
-a little bit special. We have two criteria:
+```python
+from plotnine import ggplot, aes, geom_point
+from plotnine_extra import geom_pointdensity, annotation_stripes
+```
 
-1. Simple looking plots that otherwise require a trick or two.
-2. Plots that are part of a data analytic narrative. That is, they provide
-   some form of clarity showing off the `geom`, `stat`, ... at their
-   differential best.
+## Extra Components
 
-If you come up with something that meets those criteria, we would love to
-see it. See [plotnine-examples](https://github.com/has2k1/plotnine-examples).
+### Geoms
 
-If you discover a bug checkout the [issues](https://github.com/has2k1/plotnine/issues)
-if it has not been reported, yet please file an issue.
+- **`geom_pointdensity`** — Scatterplot with density estimation at each point
+- **`geom_spoke`** — Line segments parameterised by location, direction, and distance
+- **`annotation_stripes`** — Alternating background stripes, useful with `geom_jitter`
 
-And if you can fix a bug, your contribution is welcome.
+### Stats
 
-Testing
--------
+- **`stat_pointdensity`** — Compute density estimation for each point
 
-Plotnine has tests that generate images which are compared to baseline images known
-to be correct. There may be small differences in the text rendering that throw off the
-image comparisons, and the tests allow some very small differences.
+### Plot Composition
+
+Compose multiple plots using operators:
+
+- `|` — Arrange plots side by side (`Beside`)
+- `/` — Arrange plots vertically (`Stack`)
+- `+` — Arrange plots in a 2D grid (`Wrap`)
+- `-` — Arrange plots side by side at the same nesting level
+- `&` — Add to all plots in a composition
+- `*` — Add to top-level plots only
+
+```python
+from plotnine import ggplot, aes, geom_point
+from plotnine.data import mtcars
+from plotnine_extra import plot_layout, plot_annotation
+
+p1 = ggplot(mtcars, aes("wt", "mpg")) + geom_point()
+p2 = ggplot(mtcars, aes("hp", "mpg")) + geom_point()
+
+# Side by side
+p1 | p2
+
+# Stacked
+p1 / p2
+
+# With layout control
+(p1 | p2) + plot_layout(widths=[1, 2])
+
+# With annotation
+(p1 | p2) + plot_annotation(title="My Composition")
+```
+
+Additional composition classes and functions:
+- **`Compose`** — Base class for compositions
+- **`Beside`**, **`Stack`**, **`Wrap`** — Composition subclasses
+- **`plot_layout`** — Customise composition layout (nrow, ncol, widths, heights)
+- **`plot_annotation`** — Add title, subtitle, caption, footer to compositions
+- **`plot_spacer`** — Add blank space in compositions
+
+### Animation
+
+```python
+from plotnine import ggplot, aes, geom_point, lims
+from plotnine_extra import PlotnineAnimation
+
+plots = [
+    ggplot(data_frame_i, aes("x", "y")) + geom_point() + lims(x=(0, 10), y=(0, 10))
+    for data_frame_i in frames
+]
+
+ani = PlotnineAnimation(plots, interval=200)
+ani.save("animation.gif")
+```
+
+## Compatibility
+
+- Requires Python ≥ 3.10
+- Requires plotnine ≥ 0.15.3
+
+> **Note:** The composition and animation modules use plotnine's internal APIs and may break with future plotnine updates. Pin your plotnine version if stability is critical.
+
+## Development
+
+```bash
+git clone https://github.com/mdmanurung/plotnine.git
+cd plotnine
+pip install plotnine
+pip install -e .
+```
+
+## License
+
+MIT License (same as plotnine)

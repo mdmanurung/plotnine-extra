@@ -1,5 +1,4 @@
 import pytest
-
 from plotnine import (
     element_line,
     element_rect,
@@ -12,7 +11,26 @@ from plotnine import (
 )
 from plotnine._utils.yippie import geom as g
 from plotnine._utils.yippie import legend, plot, rotate, tag
-from plotnine.composition import plot_annotation, plot_layout
+
+from plotnine_extra.composition import plot_annotation, plot_layout
+
+# The composition tests require plotnine features from the
+# unreleased v0.16.0 development version (layout/annotation
+# properties on Compose).  Skip all tests when running against
+# an older plotnine.
+_has_compose_layout = hasattr(
+    __import__(
+        "plotnine.composition._compose", fromlist=["Compose"]
+    ).Compose,
+    "layout",
+)
+pytestmark = pytest.mark.skipif(
+    not _has_compose_layout,
+    reason=(
+        "Composition tests require plotnine >=0.16.0 "
+        "(Compose.layout not available)"
+    ),
+)
 
 
 def test_basic_horizontal_align_resize():

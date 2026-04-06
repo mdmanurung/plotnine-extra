@@ -9,10 +9,17 @@ from pathlib import Path
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 from matplotlib.testing.compare import compare_images
-
 from plotnine import ggplot, theme
-from plotnine.composition import Beside, Compose, Stack, plot_annotation
+from plotnine.composition import (
+    Beside,
+    Compose,
+    Stack,
+)
 from plotnine.themes.theme import DEFAULT_RCPARAMS
+
+from plotnine_extra.composition import (
+    plot_annotation,
+)
 
 TOLERANCE = 2  # Default tolerance for the tests
 DPI = 72  # Default DPI for the tests
