@@ -31,7 +31,7 @@ napoleon_google_docstrings = True
 napoleon_numpy_docstrings = True
 
 # -- Options for nbsphinx ---------------------------------------------------
-nbsphinx_execute = "never"
+nbsphinx_execute = "auto"
 
 # -- Options for intersphinx -------------------------------------------------
 intersphinx_mapping = {
