@@ -373,3 +373,49 @@ class TestRunStatTest:
             alternative="less",
         )
         assert r.alternative == "less"
+
+    def test_pearson_correlation(self):
+        x = np.array([1.0, 2, 3, 4, 5])
+        y = np.array([2.0, 4, 6, 8, 10])
+        r = run_stat_test(
+            [x, y], method="pearson"
+        )
+        assert r.method == "Pearson correlation"
+        assert abs(r.statistic - 1.0) < 1e-10
+        assert r.estimate == r.statistic
+
+    def test_spearman_correlation(self):
+        x = np.array([1.0, 2, 3, 4, 5])
+        y = np.array([2.0, 4, 6, 8, 10])
+        r = run_stat_test(
+            [x, y], method="spearman"
+        )
+        assert r.method == "Spearman correlation"
+        assert abs(r.statistic - 1.0) < 1e-10
+
+    def test_kendall_correlation(self):
+        x = np.array([1.0, 2, 3, 4, 5])
+        y = np.array([2.0, 4, 6, 8, 10])
+        r = run_stat_test(
+            [x, y], method="kendall"
+        )
+        assert r.method == "Kendall correlation"
+        assert abs(r.statistic - 1.0) < 1e-10
+
+    def test_correlation_wrong_groups(self):
+        with pytest.raises(
+            ValueError, match="exactly 2"
+        ):
+            run_stat_test(
+                [np.array([1.0])], method="pearson"
+            )
+
+    def test_correlation_alternative(self):
+        x = np.array([1.0, 2, 3, 4, 5])
+        y = np.array([2.0, 4, 6, 8, 10])
+        r = run_stat_test(
+            [x, y],
+            method="pearson",
+            alternative="greater",
+        )
+        assert r.alternative == "greater"
