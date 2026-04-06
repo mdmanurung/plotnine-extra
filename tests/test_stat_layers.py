@@ -23,6 +23,7 @@ from plotnine_extra import (
     stat_mean,
     stat_overlay_normal_density,
     stat_pvalue_manual,
+    stat_pwc,
     stat_regline_equation,
     stat_stars,
     stat_welch_anova_test,
@@ -519,3 +520,90 @@ class TestGeomBracket:
         )
         # Just check it can be constructed
         assert p is not None
+
+
+# ---- stat_pwc tests ----
+
+
+class TestStatPwc:
+    def test_all_pairwise(self):
+        """Test all pairwise comparisons (default)."""
+        p = (
+            ggplot(grouped_data, aes("x", "y"))
+            + geom_point()
+            + stat_pwc()
+        )
+        p.draw_test()
+
+    def test_ref_group(self):
+        """Test comparisons against a reference group."""
+        p = (
+            ggplot(grouped_data, aes("x", "y"))
+            + geom_point()
+            + stat_pwc(ref_group="A")
+        )
+        p.draw_test()
+
+    def test_explicit_comparisons(self):
+        """Test explicit comparisons list."""
+        p = (
+            ggplot(grouped_data, aes("x", "y"))
+            + geom_point()
+            + stat_pwc(comparisons=[("A", "B")])
+        )
+        p.draw_test()
+
+    def test_t_test_method(self):
+        """Test with t-test method."""
+        p = (
+            ggplot(grouped_data, aes("x", "y"))
+            + geom_point()
+            + stat_pwc(method="t.test")
+        )
+        p.draw_test()
+
+    def test_signif_label(self):
+        """Test significance symbol labels."""
+        p = (
+            ggplot(grouped_data, aes("x", "y"))
+            + geom_point()
+            + stat_pwc(label="p.signif")
+        )
+        p.draw_test()
+
+    def test_adj_signif_label(self):
+        """Test adjusted significance labels."""
+        p = (
+            ggplot(grouped_data, aes("x", "y"))
+            + geom_point()
+            + stat_pwc(label="p.adj.signif")
+        )
+        p.draw_test()
+
+    def test_hide_ns(self):
+        """Test hiding non-significant results."""
+        p = (
+            ggplot(grouped_data, aes("x", "y"))
+            + geom_point()
+            + stat_pwc(hide_ns=True)
+        )
+        p.draw_test()
+
+    def test_bonferroni_adjustment(self):
+        """Test Bonferroni p-value adjustment."""
+        p = (
+            ggplot(grouped_data, aes("x", "y"))
+            + geom_point()
+            + stat_pwc(p_adjust_method="bonferroni")
+        )
+        p.draw_test()
+
+    def test_p_adjust_methods(self):
+        """Test various p-value adjustment methods."""
+        for method in ("holm", "BH", "fdr", "none"):
+            p = (
+                ggplot(grouped_data, aes("x", "y"))
+                + geom_point()
+                + stat_pwc(p_adjust_method=method)
+            )
+            p.draw_test()
