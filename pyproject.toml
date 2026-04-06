@@ -2,7 +2,7 @@
 [project]
 name = "plotnine-extra"
 description = "Extension package for plotnine with extra geoms, stats, composition, and animation"
-license = {file = "LICENSE"}
+license = {text = "MIT"}
 authors = [
   {name = "Hassan Kibirige", email = "has2k1@gmail.com"},
 ]
@@ -55,12 +55,14 @@ dev = [
 ]
 
 [project.urls]
-repository = "https://github.com/mdmanurung/plotnine"
+Homepage = "https://github.com/mdmanurung/plotnine-extra"
+Repository = "https://github.com/mdmanurung/plotnine-extra"
+"Bug Tracker" = "https://github.com/mdmanurung/plotnine-extra/issues"
 
 ########## Build System ##########
 [build-system]
 requires = [
-    "setuptools>=59",
+    "setuptools>=59,<75",
     "wheel",
 ]
 build-backend = "setuptools.build_meta"

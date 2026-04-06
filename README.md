@@ -99,11 +99,42 @@ ani.save("animation.gif")
 ## Development
 
 ```bash
-git clone https://github.com/mdmanurung/plotnine.git
-cd plotnine
-pip install plotnine
-pip install -e .
+git clone https://github.com/mdmanurung/plotnine-extra.git
+cd plotnine-extra
+pip install -e ".[all]"
 ```
+
+## Publishing to PyPI
+
+This project uses [trusted publishing](https://docs.pypi.org/trusted-publishers/) (OIDC) via GitHub Actions — no API tokens needed.
+
+### One-time setup
+
+1. **Create accounts** on [PyPI](https://pypi.org) and [TestPyPI](https://test.pypi.org)
+
+2. **Add trusted publishers** on both PyPI and TestPyPI:
+   - Go to your account → Publishing → Add a new pending publisher
+   - Fill in:
+     - **PyPI project name:** `plotnine-extra`
+     - **Owner:** `mdmanurung`
+     - **Repository:** `plotnine-extra`
+     - **Workflow name:** `publish.yml`
+     - **Environment name:** `pypi` (for PyPI) or `testpypi` (for TestPyPI)
+
+3. **Create GitHub environments** in your repository settings:
+   - Go to Settings → Environments
+   - Create two environments: `pypi` and `testpypi`
+
+### How to publish
+
+- **To TestPyPI:** Go to Actions → "Publish to PyPI / TestPyPI" → Run workflow → select `testpypi`
+- **To PyPI:** Create a GitHub Release (tag it as `v0.1.0`, etc.) — publishing happens automatically
+
+### Version bumping
+
+Before publishing a new version, update the version in both:
+- `pyproject.toml` → `version = "X.Y.Z"`
+- `plotnine_extra/__init__.py` → `__version__ = "X.Y.Z"`
 
 ## License
 
