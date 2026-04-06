@@ -1,17 +1,18 @@
-import numpy as np
-import pandas as pd
-from plotnine.doctools import document
-from plotnine.mapping.evaluation import after_stat
-from plotnine.stats.stat import stat
+from __future__ import annotations
 
-from ._common import preserve_panel_columns
-from ._label_utils import compute_label_position
-from ._p_format import format_p_value, p_to_signif
-from ._stat_test import run_stat_test
+from typing import TYPE_CHECKING
+
+from plotnine.doctools import document
+
+from ._base_stat_test import _base_stat_test
+
+if TYPE_CHECKING:
+    import numpy as np
+    import pandas as pd
 
 
 @document
-class stat_friedman_test(stat):
+class stat_friedman_test(_base_stat_test):
     """
     Add Friedman test p-values to a plot
 
@@ -55,8 +56,6 @@ class stat_friedman_test(stat):
     ```
 
     """
-    REQUIRED_AES = {"x", "y"}
-    DEFAULT_AES = {"label": after_stat("label")}
     DEFAULT_PARAMS = {
         "geom": "text",
         "position": "identity",
@@ -70,67 +69,36 @@ class stat_friedman_test(stat):
         "label", "p", "p_signif", "statistic", "df", "method",
     }
 
-    def compute_panel(self, data, scales):
+    _test_method = "friedman.test"
+    _min_groups = 3
+
+    def _extract_groups(
+        self,
+        data: pd.DataFrame,
+    ) -> list[np.ndarray]:
+        """
+        Extract groups, using *wid* for subject alignment
+        when available.
+        """
         wid = self.params.get("wid")
 
         if wid and wid in data.columns:
-            # Reshape: pivot so each subject has one row,
-            # columns are treatment levels
             groups = []
             for _, grp in data.groupby("x"):
-                # Sort by subject ID for alignment
                 sorted_vals = (
                     grp.sort_values(wid)["y"]
                     .to_numpy(dtype=float)
                 )
                 groups.append(sorted_vals)
         else:
-            # Fall back to grouping by x
             groups = [
                 grp["y"].to_numpy(dtype=float)
                 for _, grp in data.groupby("x")
             ]
 
-        if len(groups) < 3:
-            return pd.DataFrame()
-
         # Ensure equal group sizes for Friedman test
-        min_len = min(len(g) for g in groups)
-        groups = [g[:min_len] for g in groups]
+        if groups:
+            min_len = min(len(g) for g in groups)
+            groups = [g[:min_len] for g in groups]
 
-        result = run_stat_test(groups, method="friedman.test")
-        p_digits = self.params["p_digits"]
-        p_str = format_p_value(result.p_value, digits=p_digits)
-        p_signif = p_to_signif(result.p_value)
-        label = f"Friedman test, {p_str}"
-
-        x_pos = compute_label_position(
-            data["x"].min(),
-            data["x"].max(),
-            self.params["label_x_npc"],
-        )
-        y_pos = compute_label_position(
-            data["y"].min(),
-            data["y"].max(),
-            self.params["label_y_npc"],
-        )
-
-        return preserve_panel_columns(
-            pd.DataFrame(
-                {
-                    "x": [x_pos],
-                    "y": [y_pos],
-                    "label": [label],
-                    "p": [result.p_value],
-                    "p_signif": [p_signif],
-                    "statistic": [result.statistic],
-                    "df": [
-                        result.df
-                        if result.df is not None
-                        else np.nan
-                    ],
-                    "method": [result.method],
-                }
-            ),
-            data,
-        )
+        return groups

@@ -5,19 +5,15 @@ ported from R's ``ggbeeswarm::geom_quasirandom``.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
 from plotnine.doctools import document
 from plotnine.geoms.geom_point import geom_point
 
 from ..positions.position_quasirandom import position_quasirandom
-
-if TYPE_CHECKING:
-    from typing import Any, Optional
+from ._position_geom_mixin import _PositionGeomMixin
 
 
 @document
-class geom_quasirandom(geom_point):
+class geom_quasirandom(_PositionGeomMixin, geom_point):
     """
     Points jittered to reduce overplotting using quasi-random noise
 
@@ -58,7 +54,7 @@ class geom_quasirandom(geom_point):
         "na_rm": False,
     }
 
-    # Position parameter names and their defaults
+    _position_class = position_quasirandom
     _position_params = {
         "method": "quasirandom",
         "width": None,
@@ -67,17 +63,3 @@ class geom_quasirandom(geom_point):
         "nbins": None,
         "dodge_width": None,
     }
-
-    def __init__(
-        self,
-        mapping: Optional[Any] = None,
-        data: Optional[Any] = None,
-        **kwargs: Any,
-    ):
-        # Extract position parameters from kwargs
-        pos_kwargs = {}
-        for key, default in self._position_params.items():
-            pos_kwargs[key] = kwargs.pop(key, default)
-
-        kwargs["position"] = position_quasirandom(**pos_kwargs)
-        super().__init__(mapping=mapping, data=data, **kwargs)

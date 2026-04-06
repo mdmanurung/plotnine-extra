@@ -1,17 +1,12 @@
-import numpy as np
-import pandas as pd
-from plotnine.doctools import document
-from plotnine.mapping.evaluation import after_stat
-from plotnine.stats.stat import stat
+from __future__ import annotations
 
-from ._common import preserve_panel_columns
-from ._label_utils import compute_label_position
-from ._p_format import format_p_value, p_to_signif
-from ._stat_test import run_stat_test
+from plotnine.doctools import document
+
+from ._base_stat_test import _base_stat_test
 
 
 @document
-class stat_kruskal_test(stat):
+class stat_kruskal_test(_base_stat_test):
     """
     Add Kruskal-Wallis test p-values to a plot
 
@@ -51,8 +46,6 @@ class stat_kruskal_test(stat):
     ```
 
     """
-    REQUIRED_AES = {"x", "y"}
-    DEFAULT_AES = {"label": after_stat("label")}
     DEFAULT_PARAMS = {
         "geom": "text",
         "position": "identity",
@@ -63,49 +56,5 @@ class stat_kruskal_test(stat):
     }
     CREATES = {"label", "p", "p_signif", "statistic", "df", "method"}
 
-    def compute_panel(self, data, scales):
-        # Group data by x categories
-        groups = [
-            grp["y"].to_numpy(dtype=float)
-            for _, grp in data.groupby("x")
-        ]
-
-        if len(groups) < 2:
-            return pd.DataFrame()
-
-        result = run_stat_test(groups, method="kruskal.test")
-        p_digits = self.params["p_digits"]
-        p_str = format_p_value(result.p_value, digits=p_digits)
-        p_signif = p_to_signif(result.p_value)
-        label = f"Kruskal-Wallis, {p_str}"
-
-        x_pos = compute_label_position(
-            data["x"].min(),
-            data["x"].max(),
-            self.params["label_x_npc"],
-        )
-        y_pos = compute_label_position(
-            data["y"].min(),
-            data["y"].max(),
-            self.params["label_y_npc"],
-        )
-
-        return preserve_panel_columns(
-            pd.DataFrame(
-                {
-                    "x": [x_pos],
-                    "y": [y_pos],
-                    "label": [label],
-                    "p": [result.p_value],
-                    "p_signif": [p_signif],
-                    "statistic": [result.statistic],
-                    "df": [
-                        result.df
-                        if result.df is not None
-                        else np.nan
-                    ],
-                    "method": [result.method],
-                }
-            ),
-            data,
-        )
+    _test_method = "kruskal.test"
+    _min_groups = 2

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import pandas as pd
 from plotnine.doctools import document
 from plotnine.stats.stat import stat
@@ -41,7 +43,7 @@ class stat_stars(stat):
     }
     CREATES = {"xend", "yend"}
 
-    def compute_group(self, data, scales):
+    def compute_group(self, data, scales) -> pd.DataFrame:
         mean_x = data["x"].mean()
         mean_y = data["y"].mean()
 

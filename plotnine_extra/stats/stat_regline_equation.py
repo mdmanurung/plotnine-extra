@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import numpy as np
 import pandas as pd
 from plotnine.doctools import document
@@ -63,7 +65,7 @@ class stat_regline_equation(stat):
     }
     CREATES = {"label", "eq", "rr", "adj_rr", "aic", "bic"}
 
-    def compute_group(self, data, scales):
+    def compute_group(self, data, scales) -> pd.DataFrame:
         x = data["x"].to_numpy(dtype=float)
         y = data["y"].to_numpy(dtype=float)
 

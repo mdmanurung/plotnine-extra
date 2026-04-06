@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from plotnine.doctools import document
 from plotnine.geoms.geom_point import geom_point
 

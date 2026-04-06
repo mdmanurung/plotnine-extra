@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import pandas as pd
 from plotnine.doctools import document
 from plotnine.stats.stat import stat
@@ -32,7 +34,7 @@ class stat_mean(stat):
         "na_rm": False,
     }
 
-    def compute_group(self, data, scales):
+    def compute_group(self, data, scales) -> pd.DataFrame:
         return pd.DataFrame(
             {
                 "x": [data["x"].mean()],

@@ -5,19 +5,15 @@ ported from R's ``ggbeeswarm::geom_beeswarm``.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
 from plotnine.doctools import document
 from plotnine.geoms.geom_point import geom_point
 
 from ..positions.position_beeswarm import position_beeswarm
-
-if TYPE_CHECKING:
-    from typing import Any, Optional
+from ._position_geom_mixin import _PositionGeomMixin
 
 
 @document
-class geom_beeswarm(geom_point):
+class geom_beeswarm(_PositionGeomMixin, geom_point):
     """
     Points jittered to avoid overplotting using the beeswarm algorithm
 
@@ -64,7 +60,7 @@ class geom_beeswarm(geom_point):
         "na_rm": False,
     }
 
-    # Position parameter names and their defaults
+    _position_class = position_beeswarm
     _position_params = {
         "method": "swarm",
         "cex": 1.0,
@@ -74,17 +70,3 @@ class geom_beeswarm(geom_point):
         "corral": "none",
         "corral_width": 0.9,
     }
-
-    def __init__(
-        self,
-        mapping: Optional[Any] = None,
-        data: Optional[Any] = None,
-        **kwargs: Any,
-    ):
-        # Extract position parameters from kwargs
-        pos_kwargs = {}
-        for key, default in self._position_params.items():
-            pos_kwargs[key] = kwargs.pop(key, default)
-
-        kwargs["position"] = position_beeswarm(**pos_kwargs)
-        super().__init__(mapping=mapping, data=data, **kwargs)

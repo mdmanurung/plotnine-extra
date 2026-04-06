@@ -1,11 +1,19 @@
+from __future__ import annotations
+
 import numpy as np
 import pandas as pd
 from plotnine.doctools import document
 from plotnine.mapping.evaluation import after_stat
 from plotnine.stats.stat import stat
-from scipy import stats as sp_stats
 
 from ._label_utils import compute_label_position
+from ._stat_test import run_stat_test
+
+_COEF_NAMES = {
+    "pearson": "R",
+    "spearman": "ρ",
+    "kendall": "τ",
+}
 
 
 @document
@@ -77,7 +85,7 @@ class stat_cor(stat):
     }
     CREATES = {"label", "r", "rr", "p"}
 
-    def compute_group(self, data, scales):
+    def compute_group(self, data, scales) -> pd.DataFrame:
         x = data["x"].to_numpy(dtype=float)
         y = data["y"].to_numpy(dtype=float)
         method = self.params["method"]
@@ -86,30 +94,13 @@ class stat_cor(stat):
         if len(x) < 3:
             return pd.DataFrame()
 
-        # Compute correlation
-        if method == "pearson":
-            result = sp_stats.pearsonr(
-                x, y, alternative=alternative
-            )
-            coef_name = "R"
-        elif method == "spearman":
-            result = sp_stats.spearmanr(
-                x, y, alternative=alternative
-            )
-            coef_name = "ρ"
-        elif method == "kendall":
-            result = sp_stats.kendalltau(
-                x, y, alternative=alternative
-            )
-            coef_name = "τ"
-        else:
-            raise ValueError(
-                f"method must be 'pearson', 'spearman', "
-                f"or 'kendall', got '{method}'"
-            )
+        result = run_stat_test(
+            [x, y], method=method, alternative=alternative
+        )
 
+        coef_name = _COEF_NAMES.get(method, "R")
         r = result.statistic
-        p = result.pvalue
+        p = result.p_value
         rr = r**2
 
         # Format label
@@ -144,14 +135,14 @@ class stat_cor(stat):
         )
 
 
-def _accuracy_to_digits(accuracy):
+def _accuracy_to_digits(accuracy: float) -> int:
     """Convert accuracy (e.g. 0.01) to number of digits (e.g. 2)."""
     if accuracy >= 1:
         return 0
     return max(0, int(np.ceil(-np.log10(accuracy))))
 
 
-def _format_p(p, accuracy):
+def _format_p(p: float, accuracy: float) -> str:
     """Format a p-value with the given accuracy."""
     if p < accuracy:
         digits = _accuracy_to_digits(accuracy)

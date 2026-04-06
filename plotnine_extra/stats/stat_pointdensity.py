@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import TYPE_CHECKING, cast
 
 import numpy as np
@@ -69,7 +71,7 @@ default="statsmodels"
                 y_type = get_var_type(data["y"])
                 kde_params["var_type"] = f"{x_type}{y_type}"
 
-    def compute_group(self, data, scales):
+    def compute_group(self, data, scales) -> pd.DataFrame:
         package = self.params["package"]
         kde_params = self.params["kde_params"]
         x = cast("FloatArray", data["x"].to_numpy())

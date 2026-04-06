@@ -80,6 +80,10 @@ def run_stat_test(
         return _run_friedman(groups)
     elif method == "welch.anova":
         return _run_welch_anova(groups)
+    elif method in ("pearson", "spearman", "kendall"):
+        return _run_correlation(
+            groups, method, alternative
+        )
     else:
         raise ValueError(f"Unknown test method: {method}")
 
@@ -223,4 +227,35 @@ def _run_welch_anova(
         method="Welch's ANOVA",
         df=df1,
         df2=df2,
+    )
+
+
+def _run_correlation(
+    groups: list[np.ndarray],
+    method: str,
+    alternative: str,
+) -> StatTestResult:
+    """Run a correlation test (Pearson, Spearman, or Kendall)."""
+    if len(groups) != 2:
+        raise ValueError(
+            "Correlation tests require exactly 2 arrays"
+        )
+
+    x, y = groups[0], groups[1]
+
+    method_map = {
+        "pearson": (sp_stats.pearsonr, "Pearson"),
+        "spearman": (sp_stats.spearmanr, "Spearman"),
+        "kendall": (sp_stats.kendalltau, "Kendall"),
+    }
+
+    func, name = method_map[method]
+    result = func(x, y, alternative=alternative)
+
+    return StatTestResult(
+        statistic=result.statistic,
+        p_value=result.pvalue,
+        method=f"{name} correlation",
+        estimate=result.statistic,
+        alternative=alternative,
     )

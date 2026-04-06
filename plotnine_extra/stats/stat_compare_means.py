@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import pandas as pd
 from plotnine.doctools import document
 from plotnine.mapping.evaluation import after_stat
@@ -95,7 +97,7 @@ class stat_compare_means(stat):
         # "p.signif"), not a literal label string.
         self._kwargs.pop("label", None)
 
-    def compute_panel(self, data, scales):
+    def compute_panel(self, data, scales) -> pd.DataFrame:
         method = self.params["method"]
         paired = self.params["paired"]
         comparisons = self.params["comparisons"]

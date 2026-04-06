@@ -1,17 +1,19 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 import numpy as np
 import pandas as pd
 from plotnine.doctools import document
-from plotnine.mapping.evaluation import after_stat
-from plotnine.stats.stat import stat
 
-from ._common import preserve_panel_columns
-from ._label_utils import compute_label_position
-from ._p_format import format_p_value, p_to_signif
-from ._stat_test import run_stat_test
+from ._base_stat_test import _base_stat_test
+
+if TYPE_CHECKING:
+    from plotnine_extra.stats._stat_test import StatTestResult
 
 
 @document
-class stat_welch_anova_test(stat):
+class stat_welch_anova_test(_base_stat_test):
     """
     Add Welch's ANOVA test p-values to a plot
 
@@ -52,8 +54,6 @@ class stat_welch_anova_test(stat):
     ```
 
     """
-    REQUIRED_AES = {"x", "y"}
-    DEFAULT_AES = {"label": after_stat("label")}
     DEFAULT_PARAMS = {
         "geom": "text",
         "position": "identity",
@@ -66,52 +66,37 @@ class stat_welch_anova_test(stat):
         "label", "p", "p_signif", "f", "df1", "df2", "method",
     }
 
-    def compute_panel(self, data, scales):
-        # Group data by x categories
-        groups = [
-            grp["y"].to_numpy(dtype=float)
-            for _, grp in data.groupby("x")
-        ]
+    _test_method = "welch.anova"
+    _min_groups = 2
 
-        if len(groups) < 2:
-            return pd.DataFrame()
-
-        result = run_stat_test(groups, method="welch.anova")
-        p_digits = self.params["p_digits"]
-        p_str = format_p_value(result.p_value, digits=p_digits)
-        p_signif = p_to_signif(result.p_value)
-
+    def _build_result(
+        self,
+        result: StatTestResult,
+        p_str: str,
+        p_signif: str,
+        x_pos: float,
+        y_pos: float,
+        data: pd.DataFrame,
+        groups: list[np.ndarray],
+    ) -> pd.DataFrame:
         df1 = result.df if result.df is not None else np.nan
-        df2 = result.df2 if result.df2 is not None else np.nan
+        df2 = (
+            result.df2 if result.df2 is not None else np.nan
+        )
         label = (
             f"Welch's ANOVA, F({df1:.0f}, {df2:.1f})"
             f" = {result.statistic:.2f}, {p_str}"
         )
-
-        x_pos = compute_label_position(
-            data["x"].min(),
-            data["x"].max(),
-            self.params["label_x_npc"],
-        )
-        y_pos = compute_label_position(
-            data["y"].min(),
-            data["y"].max(),
-            self.params["label_y_npc"],
-        )
-
-        return preserve_panel_columns(
-            pd.DataFrame(
-                {
-                    "x": [x_pos],
-                    "y": [y_pos],
-                    "label": [label],
-                    "p": [result.p_value],
-                    "p_signif": [p_signif],
-                    "f": [result.statistic],
-                    "df1": [df1],
-                    "df2": [df2],
-                    "method": [result.method],
-                }
-            ),
-            data,
+        return pd.DataFrame(
+            {
+                "x": [x_pos],
+                "y": [y_pos],
+                "label": [label],
+                "p": [result.p_value],
+                "p_signif": [p_signif],
+                "f": [result.statistic],
+                "df1": [df1],
+                "df2": [df2],
+                "method": [result.method],
+            }
         )

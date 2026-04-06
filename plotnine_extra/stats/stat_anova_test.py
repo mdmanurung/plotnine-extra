@@ -1,17 +1,19 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 import numpy as np
 import pandas as pd
 from plotnine.doctools import document
-from plotnine.mapping.evaluation import after_stat
-from plotnine.stats.stat import stat
 
-from ._common import preserve_panel_columns
-from ._label_utils import compute_label_position
-from ._p_format import format_p_value, p_to_signif
-from ._stat_test import run_stat_test
+from ._base_stat_test import _base_stat_test
+
+if TYPE_CHECKING:
+    from plotnine_extra.stats._stat_test import StatTestResult
 
 
 @document
-class stat_anova_test(stat):
+class stat_anova_test(_base_stat_test):
     """
     Add ANOVA test p-values to a plot
 
@@ -59,8 +61,6 @@ class stat_anova_test(stat):
     ```
 
     """
-    REQUIRED_AES = {"x", "y"}
-    DEFAULT_AES = {"label": after_stat("label")}
     DEFAULT_PARAMS = {
         "geom": "text",
         "position": "identity",
@@ -82,20 +82,19 @@ class stat_anova_test(stat):
         "method",
     }
 
-    def compute_panel(self, data, scales):
-        # Group data by x categories
-        grouped = dict(list(data.groupby("x")))
-        group_names = sorted(grouped.keys())
-        groups = [
-            grouped[g]["y"].to_numpy(dtype=float)
-            for g in group_names
-        ]
+    _test_method = "anova"
+    _min_groups = 2
 
-        if len(groups) < 2:
-            return pd.DataFrame()
-
-        result = run_stat_test(groups, method="anova")
-
+    def _build_result(
+        self,
+        result: StatTestResult,
+        p_str: str,
+        p_signif: str,
+        x_pos: float,
+        y_pos: float,
+        data: pd.DataFrame,
+        groups: list[np.ndarray],
+    ) -> pd.DataFrame:
         # Compute effect size (eta-squared)
         all_data = np.concatenate(groups)
         grand_mean = np.mean(all_data)
@@ -104,13 +103,9 @@ class stat_anova_test(stat):
             for g in groups
         )
         ss_total = np.sum((all_data - grand_mean) ** 2)
-        eta_sq = ss_between / ss_total if ss_total > 0 else 0
-
-        p_digits = self.params["p_digits"]
-        p_str = format_p_value(
-            result.p_value, digits=p_digits
+        eta_sq = (
+            ss_between / ss_total if ss_total > 0 else 0
         )
-        p_signif = p_to_signif(result.p_value)
 
         df1 = result.df if result.df is not None else np.nan
         df2 = (
@@ -123,31 +118,17 @@ class stat_anova_test(stat):
             f" η² = {eta_sq:.2f}"
         )
 
-        x_pos = compute_label_position(
-            data["x"].min(),
-            data["x"].max(),
-            self.params["label_x_npc"],
-        )
-        y_pos = compute_label_position(
-            data["y"].min(),
-            data["y"].max(),
-            self.params["label_y_npc"],
-        )
-
-        return preserve_panel_columns(
-            pd.DataFrame(
-                {
-                    "x": [x_pos],
-                    "y": [y_pos],
-                    "label": [label],
-                    "p": [result.p_value],
-                    "p_signif": [p_signif],
-                    "f": [result.statistic],
-                    "df": [df1],
-                    "df_residual": [df2],
-                    "effect_size": [eta_sq],
-                    "method": [result.method],
-                }
-            ),
-            data,
+        return pd.DataFrame(
+            {
+                "x": [x_pos],
+                "y": [y_pos],
+                "label": [label],
+                "p": [result.p_value],
+                "p_signif": [p_signif],
+                "f": [result.statistic],
+                "df": [df1],
+                "df_residual": [df2],
+                "effect_size": [eta_sq],
+                "method": [result.method],
+            }
         )
