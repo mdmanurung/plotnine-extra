@@ -54,6 +54,6 @@ jobs:
 
       - name: Execute all vignette notebooks
         run: |
-          jupyter nbconvert --to notebook --execute \
+          jupyter nbconvert --to notebook --execute --inplace \
             --ExecutePreprocessor.timeout=600 \
             docs/vignettes/*.ipynb
