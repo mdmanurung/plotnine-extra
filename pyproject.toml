@@ -54,6 +54,13 @@ dev = [
     "pre-commit",
 ]
 
+doc = [
+    "sphinx>=7.0",
+    "sphinx-rtd-theme>=2.0",
+    "nbsphinx>=0.9",
+    "ipykernel",
+]
+
 [project.urls]
 Homepage = "https://github.com/mdmanurung/plotnine-extra"
 Repository = "https://github.com/mdmanurung/plotnine-extra.git"
