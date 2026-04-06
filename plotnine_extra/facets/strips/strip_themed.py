@@ -40,12 +40,8 @@ class strip_themed(Strip):
         text_x: Optional[Sequence[Any]] = None,
         text_y: Optional[Sequence[Any]] = None,
     ):
-        self.background_x = (
-            list(background_x) if background_x else []
-        )
-        self.background_y = (
-            list(background_y) if background_y else []
-        )
+        self.background_x = list(background_x) if background_x else []
+        self.background_y = list(background_y) if background_y else []
         self.text_x = list(text_x) if text_x else []
         self.text_y = list(text_y) if text_y else []
 

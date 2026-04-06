@@ -56,9 +56,7 @@ class strip_tag(Strip):
         prefix: str = "",
         suffix: str = "",
     ):
-        self.tag_pool = (
-            list(tag_pool) if tag_pool else _default_tags()
-        )
+        self.tag_pool = list(tag_pool) if tag_pool else _default_tags()
         self.position = position
         self.prefix = prefix
         self.suffix = suffix

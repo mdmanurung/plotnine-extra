@@ -1,5 +1,8 @@
 """
-Theme elements for rich text, ported from R's ``ggtext``.
+Theme elements and publication-ready themes.
+
+``element_markdown`` and ``element_textbox_simple`` are ported
+from R's ``ggtext``.
 
 ``element_markdown`` and ``element_textbox_simple`` extend
 plotnine's ``element_text`` with convenience defaults and
@@ -20,6 +23,22 @@ from contextlib import suppress
 from typing import TYPE_CHECKING, Any, Literal, Sequence
 
 from plotnine.themes.elements.element_text import element_text
+
+from .theme_pub import (  # noqa: E402
+    theme_clean as theme_clean,
+)
+from .theme_pub import (
+    theme_nature as theme_nature,
+)
+from .theme_pub import (
+    theme_poster as theme_poster,
+)
+from .theme_pub import (
+    theme_pubr as theme_pubr,
+)
+from .theme_pub import (
+    theme_scientific as theme_scientific,
+)
 
 if TYPE_CHECKING:
     from plotnine.themes.elements.margin import margin as Margin
@@ -79,9 +98,7 @@ class element_markdown(element_text):
         weight: int | str | Sequence[int | str] | None = None,
         color: str | tuple | Sequence[str | tuple] | None = None,
         size: float | Sequence[float] | None = None,
-        ha: (
-            Literal["center", "left", "right"] | float | None
-        ) = None,
+        ha: (Literal["center", "left", "right"] | float | None) = None,
         va: (
             Literal[
                 "center",
@@ -94,15 +111,10 @@ class element_markdown(element_text):
             | None
         ) = None,
         rotation: (
-            Literal["vertical", "horizontal"]
-            | float
-            | Sequence[float]
-            | None
+            Literal["vertical", "horizontal"] | float | Sequence[float] | None
         ) = None,
         linespacing: float | None = None,
-        backgroundcolor: (
-            str | tuple | Sequence[str | tuple] | None
-        ) = None,
+        backgroundcolor: (str | tuple | Sequence[str | tuple] | None) = None,
         margin: "Margin | dict[str, Any] | None" = None,
         face: str | None = None,
         **kwargs: Any,
@@ -191,9 +203,7 @@ class element_textbox_simple(element_text):
         weight: int | str | Sequence[int | str] | None = None,
         color: str | tuple | Sequence[str | tuple] | None = None,
         size: float | Sequence[float] | None = None,
-        ha: (
-            Literal["center", "left", "right"] | float | None
-        ) = "left",
+        ha: (Literal["center", "left", "right"] | float | None) = "left",
         va: (
             Literal[
                 "center",
@@ -206,9 +216,7 @@ class element_textbox_simple(element_text):
             | None
         ) = "top",
         linespacing: float | None = 1.2,
-        backgroundcolor: (
-            str | tuple | Sequence[str | tuple] | None
-        ) = None,
+        backgroundcolor: (str | tuple | Sequence[str | tuple] | None) = None,
         margin: "Margin | dict[str, Any] | None" = None,
         face: str | None = None,
         **kwargs: Any,

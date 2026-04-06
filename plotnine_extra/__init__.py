@@ -63,10 +63,23 @@ Datasets (via ``plotnine_extra.data``):
     - ToothGrowth: Tooth growth in guinea pigs (ggpubr example data)
 """
 
+import warnings as _warnings
+
 from plotnine import *  # noqa: F401, F403
 from plotnine import __version__ as _plotnine_version
 
-from .animation import PlotnineAnimation
+# Warn if plotnine version is untested
+_tested_plotnine = ("0.15", "0.16")
+if not any(_plotnine_version.startswith(v) for v in _tested_plotnine):
+    _warnings.warn(
+        f"plotnine-extra has been tested with plotnine "
+        f"0.15.x-0.16.x but you have "
+        f"{_plotnine_version}."
+        f" Some features may not work correctly.",
+        stacklevel=1,
+    )
+
+from .animation import PlotnineAnimation  # noqa: E402
 from .composition import (
     Beside,
     Compose,
@@ -80,10 +93,14 @@ from .geoms import (
     annotation_stripes,
     geom_beeswarm,
     geom_bracket,
+    geom_half_boxplot,
+    geom_half_violin,
+    geom_label_repel,
     geom_pointdensity,
     geom_quasirandom,
     geom_richtext,
     geom_spoke,
+    geom_text_repel,
     geom_textbox,
 )
 from .positions import (
@@ -111,6 +128,11 @@ from .stats import (
 from .themes import (
     element_markdown,
     element_textbox_simple,
+    theme_clean,
+    theme_nature,
+    theme_poster,
+    theme_pubr,
+    theme_scientific,
 )
 
 __version__ = "0.1.0"
@@ -121,10 +143,14 @@ _extra_all = (
     "annotation_stripes",
     "geom_beeswarm",
     "geom_bracket",
+    "geom_half_boxplot",
+    "geom_half_violin",
+    "geom_label_repel",
     "geom_pointdensity",
     "geom_quasirandom",
     "geom_richtext",
     "geom_spoke",
+    "geom_text_repel",
     "geom_textbox",
     # Positions
     "position_beeswarm",
@@ -132,6 +158,12 @@ _extra_all = (
     # Theme elements
     "element_markdown",
     "element_textbox_simple",
+    # Themes
+    "theme_pubr",
+    "theme_clean",
+    "theme_scientific",
+    "theme_nature",
+    "theme_poster",
     # Stats
     "stat_anova_test",
     "stat_central_tendency",

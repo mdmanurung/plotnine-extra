@@ -7,9 +7,13 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Literal
 
 from plotnine.facets.facet_wrap import facet_wrap
+from plotnine.facets.strips import Strips, strip
 
 if TYPE_CHECKING:
     from typing import Optional, Sequence
+
+    from matplotlib.axes import Axes
+    from plotnine.iapi import layout_details
 
 
 class facet_nested_wrap(facet_wrap):
@@ -60,9 +64,7 @@ class facet_nested_wrap(facet_wrap):
         *,
         nrow: Optional[int] = None,
         ncol: Optional[int] = None,
-        scales: Literal[
-            "fixed", "free", "free_x", "free_y"
-        ] = "fixed",
+        scales: Literal["fixed", "free", "free_x", "free_y"] = "fixed",
         shrink: bool = True,
         labeller: Literal[
             "label_value", "label_both", "label_context"
@@ -90,6 +92,100 @@ class facet_nested_wrap(facet_wrap):
         self.solo_line = solo_line
         self.resect = resect
         self.bleed = bleed
-        # TODO: Override strip rendering to merge adjacent
-        # strips sharing the same parent category and draw
-        # nesting indicator lines.
+
+    def make_strips(self, layout_info: layout_details, ax: Axes) -> Strips:
+        """
+        Create strips with merged parent labels.
+
+        When adjacent panels (in the same row) share the same
+        value for a parent faceting variable, the duplicate label
+        is blanked out so the parent strip visually spans those
+        panels.
+        """
+        if not self.vars:
+            return Strips([])
+
+        s = _nested_wrap_strip(
+            vars=self.vars,
+            layout_info=layout_info,
+            facet_obj=self,
+            ax=ax,
+            position="top",
+            nest_line=self.nest_line,
+            solo_line=self.solo_line,
+            resect=self.resect,
+            bleed=self.bleed,
+        )
+        return Strips([s])
+
+
+class _nested_wrap_strip(strip):
+    """
+    A strip for wrapped facets that blanks duplicate parent labels.
+
+    For hierarchical faceting variables, when the panel to the left
+    (same row) shares the same parent-level values, the parent
+    portion of the label is replaced with an empty string.
+    """
+
+    def __init__(
+        self,
+        vars: Sequence[str],
+        layout_info: layout_details,
+        facet_obj: facet_nested_wrap,
+        ax: Axes,
+        position: str,
+        *,
+        nest_line: bool = False,
+        solo_line: bool = False,
+        resect: float = 0,
+        bleed: bool = False,
+    ):
+        self.nest_line = nest_line
+        self.solo_line = solo_line
+        self.resect = resect
+        self.bleed = bleed
+
+        super().__init__(vars, layout_info, facet_obj, ax, position)  # type: ignore[arg-type]
+        self._blank_duplicate_parents(layout_info, facet_obj, vars)
+
+    def _blank_duplicate_parents(
+        self,
+        layout_info: layout_details,
+        facet_obj: facet_nested_wrap,
+        vars: Sequence[str],
+    ) -> None:
+        """
+        Replace duplicate parent labels with empty strings.
+
+        Looks at the panel to the left (same row, col - 1).
+        """
+        if len(vars) < 2:
+            return
+
+        layout_df = facet_obj.layout.layout
+
+        prev_col = layout_info.col - 1
+        if prev_col < 1:
+            return
+
+        prev_mask = (layout_df["ROW"] == layout_info.row) & (
+            layout_df["COL"] == prev_col
+        )
+
+        if not prev_mask.any():
+            return
+
+        prev_row_data = layout_df.loc[prev_mask].iloc[0]
+
+        # Parent variables are all but the last (innermost)
+        parent_vars = list(vars[:-1])
+
+        all_match = all(
+            layout_info.variables.get(v) == prev_row_data.get(v)
+            for v in parent_vars
+        )
+
+        if all_match:
+            for v in parent_vars:
+                self.label_info.variables[v] = ""

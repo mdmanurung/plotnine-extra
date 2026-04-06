@@ -180,9 +180,7 @@ class stat_pwc(stat):
                     fl = scales.x.final_limits
                     if fl and isinstance(fl[0], str):
                         labels = fl
-                if labels is None and hasattr(
-                    scales.x, "get_labels"
-                ):
+                if labels is None and hasattr(scales.x, "get_labels"):
                     gl = scales.x.get_labels()
                     if gl and isinstance(gl[0], str):
                         labels = gl
@@ -210,11 +208,7 @@ class stat_pwc(stat):
                 pairs.append((k1, k2))
         elif ref_group is not None:
             ref_key = label_to_num.get(ref_group, ref_group)
-            pairs = [
-                (ref_key, g)
-                for g in group_names
-                if g != ref_key
-            ]
+            pairs = [(ref_key, g) for g in group_names if g != ref_key]
         else:
             # All pairwise combinations
             pairs = list(combinations(group_names, 2))
@@ -233,12 +227,8 @@ class stat_pwc(stat):
             if g1 not in grouped or g2 not in grouped:
                 continue
 
-            group1_vals = grouped[g1]["y"].to_numpy(
-                dtype=float
-            )
-            group2_vals = grouped[g2]["y"].to_numpy(
-                dtype=float
-            )
+            group1_vals = grouped[g1]["y"].to_numpy(dtype=float)
+            group2_vals = grouped[g2]["y"].to_numpy(dtype=float)
 
             result = run_stat_test(
                 [group1_vals, group2_vals],
@@ -259,12 +249,8 @@ class stat_pwc(stat):
             return pd.DataFrame()
 
         # Apply p-value adjustment
-        raw_p_values = np.array(
-            [r["p"] for r in raw_results]
-        )
-        adjusted_p_values = _adjust_pvalues(
-            raw_p_values, p_adjust_method
-        )
+        raw_p_values = np.array([r["p"] for r in raw_results])
+        adjusted_p_values = _adjust_pvalues(raw_p_values, p_adjust_method)
 
         # Build result rows
         results = []
@@ -279,9 +265,7 @@ class stat_pwc(stat):
             # Filter non-significant if requested
             if hide_ns:
                 check_signif = (
-                    p_adj_signif
-                    if "adj" in label_type
-                    else p_signif
+                    p_adj_signif if "adj" in label_type else p_signif
                 )
                 if check_signif == "ns":
                     continue
@@ -301,9 +285,7 @@ class stat_pwc(stat):
             xmin = min(x1, x2) + bracket_shorten
             xmax = max(x1, x2) - bracket_shorten
             y_pos = (
-                y_max
-                + y_range * bracket_nudge_y
-                + y_range * step_increase * i
+                y_max + y_range * bracket_nudge_y + y_range * step_increase * i
             )
 
             # Display labels for group1/group2
@@ -330,9 +312,7 @@ class stat_pwc(stat):
         if not results:
             return pd.DataFrame()
 
-        return preserve_panel_columns(
-            pd.DataFrame(results), data
-        )
+        return preserve_panel_columns(pd.DataFrame(results), data)
 
 
 def _make_pwc_label(
@@ -447,9 +427,25 @@ def _adjust_pvalues(
         return result
 
     elif method == "hommel":
-        # Hommel's method is complex; using Bonferroni
-        # as a conservative approximation
-        return np.minimum(p * n, 1.0)
+        # Hommel's step-down procedure
+        order = np.argsort(p)
+        sorted_p = p[order]
+        adjusted = sorted_p.copy() * n
+
+        for i in range(n - 1, 0, -1):
+            lower = np.arange(1, n - i + 1)
+            q_values = sorted_p[i:n] * i / lower
+            q_min = np.min(q_values)
+            adjusted[:i] = np.minimum(adjusted[:i], q_min)
+            adjusted[i] = max(adjusted[i], q_min)
+
+        # Enforce monotonicity
+        for i in range(1, n):
+            adjusted[i] = max(adjusted[i], adjusted[i - 1])
+        adjusted = np.minimum(adjusted, 1.0)
+        result = np.empty(n)
+        result[order] = adjusted
+        return result
 
     else:
         # Unknown method, return unadjusted

@@ -39,8 +39,44 @@ class ScaleFacet:
         self.args = args
         self.kwargs = kwargs
 
-    # TODO: Integrate with facet layout to apply the scale
-    # only to panels matching the expression.
+    def __radd__(self, other: Any) -> Any:
+        """
+        Allow ``ggplot() + scale_x_facet(...)``.
+
+        Stores this object on the plot so that compatible facets
+        can consume it when initialising per-panel scales.
+        """
+        if not hasattr(other, "_scale_facets"):
+            other._scale_facets = []
+        other._scale_facets.append(self)
+        return other
+
+    def matches(self, layout_row: Any) -> bool:
+        """
+        Test whether a layout row matches this scale's selector.
+
+        Parameters
+        ----------
+        layout_row : dict-like
+            A row from the layout DataFrame (or a dict of facet
+            variable values for a panel).
+
+        Returns
+        -------
+        bool
+            ``True`` if the panel should use this scale.
+        """
+        expr = self.expr
+        if callable(expr):
+            return bool(expr(layout_row))
+        if isinstance(expr, str):
+            # Evaluate the expression string against the
+            # layout row values as local variables.
+            try:
+                return bool(eval(expr, {}, dict(layout_row)))  # noqa: S307
+            except Exception:
+                return False
+        return False
 
 
 def scale_x_facet(
