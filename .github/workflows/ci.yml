@@ -21,6 +21,8 @@ jobs:
         run: pip install ruff
       - name: Lint
         run: ruff check plotnine_extra/
+      - name: Check formatting
+        run: ruff format --check plotnine_extra/
 
   test:
     runs-on: ubuntu-latest
@@ -35,8 +37,12 @@ jobs:
       - name: Install dependencies
         run: |
           pip install -e ".[test]"
-      - name: Run tests
-        run: python -m pytest tests/ -v
+      - name: Run tests with coverage
+        run: |
+          python -m pytest tests/ -v \
+            --cov=plotnine_extra \
+            --cov-report=term-missing \
+            --cov-fail-under=50
 
   notebooks:
     runs-on: ubuntu-latest
