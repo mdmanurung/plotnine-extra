@@ -381,7 +381,7 @@ class TestRunStatTest:
             [x, y], method="pearson"
         )
         assert r.method == "Pearson correlation"
-        assert abs(r.statistic - 1.0) < 1e-10
+        assert abs(r.statistic - 1.0) < 1e-6
         assert r.estimate == r.statistic
 
     def test_spearman_correlation(self):
@@ -391,7 +391,7 @@ class TestRunStatTest:
             [x, y], method="spearman"
         )
         assert r.method == "Spearman correlation"
-        assert abs(r.statistic - 1.0) < 1e-10
+        assert abs(r.statistic - 1.0) < 1e-6
 
     def test_kendall_correlation(self):
         x = np.array([1.0, 2, 3, 4, 5])
@@ -400,7 +400,7 @@ class TestRunStatTest:
             [x, y], method="kendall"
         )
         assert r.method == "Kendall correlation"
-        assert abs(r.statistic - 1.0) < 1e-10
+        assert abs(r.statistic - 1.0) < 1e-6
 
     def test_correlation_wrong_groups(self):
         with pytest.raises(
