@@ -167,7 +167,9 @@ class geom_textbox(geom_text):
 
             bbox = dict(bbox_base)
             bbox["edgecolor"] = (
-                params["boxcolor"] or kw["color"]
+                params["boxcolor"]
+                if params["boxcolor"] is not None
+                else kw["color"]
             )
             bbox["facecolor"] = (
                 fill if isinstance(fill, tuple) else fill[i]

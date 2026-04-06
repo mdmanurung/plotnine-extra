@@ -237,7 +237,8 @@ class geom_richtext(geom_text):
             bbox = dict(bbox_base)
             bbox["edgecolor"] = (
                 params["boxcolor"]
-                or kw["color"]
+                if params["boxcolor"] is not None
+                else kw["color"]
             )
             bbox["facecolor"] = (
                 fill if isinstance(fill, tuple) else fill[i]

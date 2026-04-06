@@ -65,7 +65,7 @@ def _kde_density(
     except np.linalg.LinAlgError:
         density = np.ones_like(values)
 
-    # Normalise so max == 1
+    # Normalize so max == 1
     dmax = density.max()
     if dmax > 0:
         density /= dmax
