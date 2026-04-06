@@ -81,6 +81,9 @@ build-backend = "setuptools.build_meta"
 [tool.setuptools.packages.find]
 include = ["plotnine_extra*"]
 
+[tool.setuptools.package-data]
+"plotnine_extra.data" = ["*.csv"]
+
 ########## Tool - Pytest ##########
 [tool.pytest.ini_options]
 testpaths = [

@@ -46,6 +46,9 @@ Composition:
 
 Animation:
     - PlotnineAnimation: Create animations from ggplot objects
+
+Datasets (via ``plotnine_extra.data``):
+    - ToothGrowth: Tooth growth in guinea pigs (ggpubr example data)
 """
 
 from plotnine import *  # noqa: F401, F403
