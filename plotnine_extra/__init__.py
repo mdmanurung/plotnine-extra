@@ -38,6 +38,9 @@ del _apply_patches
 
 # Import and register all extra components
 # (auto-registers via plotnine's Register metaclass)
+# Combine __all__ from plotnine with our extras
+import plotnine as _plotnine  # noqa: E402
+
 from plotnine_extra.coords import (  # noqa: F401, E402
     coord_polar,
     coord_quickmap,
@@ -107,9 +110,6 @@ from plotnine_extra.stats import (  # noqa: F401, E402
     stat_summary_2d,
     stat_summary_hex,
 )
-
-# Combine __all__ from plotnine with our extras
-import plotnine as _plotnine  # noqa: E402
 
 _extra_all = (
     # coords

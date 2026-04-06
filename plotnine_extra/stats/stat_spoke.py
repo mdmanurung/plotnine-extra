@@ -3,13 +3,11 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import numpy as np
-
 from plotnine.doctools import document
 from plotnine.stats.stat import stat
 
 if TYPE_CHECKING:
     import pandas as pd
-
     from plotnine.iapi import panel_scales
 
 

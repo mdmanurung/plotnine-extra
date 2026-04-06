@@ -9,7 +9,6 @@ from typing import Literal
 from warnings import warn
 
 import numpy as np
-
 from plotnine._utils.registry import alias
 from plotnine.exceptions import PlotnineWarning
 from plotnine.scales.scale_continuous import scale_continuous

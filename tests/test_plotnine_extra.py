@@ -156,19 +156,23 @@ class TestRegistry:
         for name in scale_names:
             assert name in Registry, f"{name} not in Registry"
 
-    def test_coords_registered(self):
-        from plotnine._utils.registry import Registry
-
+    def test_coords_importable(self):
+        """Coords don't use Register metaclass, but should be importable."""
         import plotnine_extra  # noqa: F401
+        from plotnine_extra.coords import (
+            coord_polar,
+            coord_quickmap,
+            coord_radial,
+            coord_sf,
+        )
 
-        coord_names = [
-            "coord_polar",
-            "coord_quickmap",
-            "coord_radial",
-            "coord_sf",
-        ]
-        for name in coord_names:
-            assert name in Registry, f"{name} not in Registry"
+        # Verify they're subclasses of coord_cartesian
+        from plotnine.coords.coord_cartesian import coord_cartesian
+
+        assert issubclass(coord_polar, coord_cartesian)
+        assert issubclass(coord_quickmap, coord_cartesian)
+        assert issubclass(coord_radial, coord_cartesian)
+        assert issubclass(coord_sf, coord_cartesian)
 
 
 class TestSubpackageImports:

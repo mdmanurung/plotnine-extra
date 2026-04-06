@@ -3,7 +3,6 @@ from __future__ import annotations
 import typing
 
 import numpy as np
-
 from plotnine.coords.coord_cartesian import coord_cartesian
 
 if typing.TYPE_CHECKING:

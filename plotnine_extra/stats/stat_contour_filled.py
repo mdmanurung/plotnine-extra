@@ -3,7 +3,6 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import pandas as pd
-
 from plotnine.doctools import document
 from plotnine.mapping.evaluation import after_stat
 from plotnine.stats.stat import stat

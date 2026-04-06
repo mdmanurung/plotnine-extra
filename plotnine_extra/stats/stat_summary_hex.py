@@ -4,7 +4,6 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 import pandas as pd
-
 from plotnine.doctools import document
 from plotnine.mapping.evaluation import after_stat
 from plotnine.stats.stat import stat

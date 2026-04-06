@@ -71,7 +71,7 @@ include = ["plotnine_extra*"]
 
 [tool.setuptools_scm]
 fallback_version = "0.1.0.dev0"
-version_scheme = 'post-release'
+version_scheme = "guess-next-dev"
 
 ########## Tool - Pytest ##########
 [tool.pytest.ini_options]

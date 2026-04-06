@@ -27,9 +27,9 @@ def apply_patches():
 
 def _patch_facet_make_axes():
     """
-    Patch facet.make_axes to support coord.projection attribute.
+    Patch facet._make_axes to support coord.projection attribute.
 
-    The original plotnine facet.make_axes creates subplots without
+    The original plotnine facet._make_axes creates subplots without
     passing a projection kwarg. We patch it so that if the
     coordinate system has a ``projection`` attribute (e.g.,
     coord_polar.projection = "polar"), it is forwarded to
@@ -37,50 +37,56 @@ def _patch_facet_make_axes():
     """
     import itertools
 
+    import numpy as np
     from plotnine.facets.facet import facet
 
-    _original_make_axes = facet.make_axes
+    _original_make_axes = facet._make_axes
 
     def _patched_make_axes(self):
         """
         Create axes for the facet, with projection support.
         """
-        # Call original to set up the gridspec, figure, etc.
-        # But we need to intercept the add_subplot calls.
-        # The simplest approach: replicate the relevant logic.
-
-        # Check if the original method has already been patched
-        # by looking for projection support
-        import inspect
-
-        src = inspect.getsource(_original_make_axes)
-        if "projection" in src:
-            # Already has projection support (shouldn't happen
-            # since we check _patches_applied, but be safe)
-            return _original_make_axes(self)
-
-        # Call the original method
-        _original_make_axes(self)
-
-        # Now re-create axes with projection if needed
         projection = getattr(
             self.plot.coordinates, "projection", None
         )
-        if projection is not None:
-            from plotnine._mpl.gridspec import p9GridSpec
 
-            gs = self.figure._p9_gridspec
-            axsarr = self.figure._p9_axsarr
+        if projection is None:
+            # No projection needed, use original
+            return _original_make_axes(self)
 
-            it = itertools.product(
-                range(self.nrow), range(self.ncol)
+        # Replicate the original logic but with projection
+        num_panels = len(self.layout.layout)
+        axsarr = np.empty(
+            (self.nrow, self.ncol), dtype=object
+        )
+        self._panels_gridspec = self._get_panels_gridspec()
+
+        it = itertools.product(
+            range(self.nrow), range(self.ncol)
+        )
+        for i, (row, col) in enumerate(it):
+            axsarr[row, col] = self.figure.add_subplot(
+                self._panels_gridspec[i],
+                projection=projection,
             )
-            for i, (row, col) in enumerate(it):
-                # Remove old axis and create new one with projection
-                old_ax = axsarr[row, col]
-                self.figure.delaxes(old_ax)
-                axsarr[row, col] = self.figure.add_subplot(
-                    gs[i], projection=projection
-                )
 
-    facet.make_axes = _patched_make_axes
+        # Rearrange axes (same logic as original)
+        if self.dir == "h":
+            order = "C"
+            if not self.as_table:
+                axsarr = axsarr[::-1]
+        elif self.dir == "v":
+            order = "F"
+            if self.as_table:
+                axsarr = axsarr[:, ::-1]
+
+        axes = axsarr.ravel(order)
+
+        # Match up panels and axes
+        _axes = []
+        for i in range(num_panels):
+            _axes.append(axes[i])
+
+        return _axes
+
+    facet._make_axes = _patched_make_axes

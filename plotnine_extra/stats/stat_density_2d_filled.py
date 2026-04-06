@@ -4,7 +4,6 @@ from typing import TYPE_CHECKING, cast
 
 import numpy as np
 import pandas as pd
-
 from plotnine.doctools import document
 from plotnine.stats.density import get_var_type, kde
 from plotnine.stats.stat import stat

@@ -3,7 +3,6 @@ from __future__ import annotations
 import typing
 
 import numpy as np
-
 from plotnine._utils import SIZE_FACTOR, to_rgba
 from plotnine.doctools import document
 from plotnine.geoms.geom import geom
@@ -14,7 +13,6 @@ if typing.TYPE_CHECKING:
     import pandas as pd
     from matplotlib.axes import Axes
     from matplotlib.offsetbox import DrawingArea
-
     from plotnine.coords.coord import coord
     from plotnine.iapi import panel_view
     from plotnine.layer import layer

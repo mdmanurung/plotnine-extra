@@ -13,7 +13,6 @@ from typing import TYPE_CHECKING, Optional, Sequence, cast
 import numpy as np
 import pandas as pd
 from mizani.bounds import rescale
-
 from plotnine._utils import match
 from plotnine.scales._runtime_typing import GuideTypeT
 from plotnine.scales.scale_continuous import scale_continuous

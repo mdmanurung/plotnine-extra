@@ -9,12 +9,10 @@ if TYPE_CHECKING:
     from typing import Optional
 
     from matplotlib.offsetbox import PackerBase
-
+    from plotnine.guides.guides import GuidesElements
     from plotnine.iapi import guide_text
     from plotnine.layer import Layers
     from plotnine.scales.scale import scale
-
-    from plotnine.guides.guides import GuidesElements
 
 
 @dataclass

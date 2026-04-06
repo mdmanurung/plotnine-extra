@@ -7,7 +7,6 @@ from plotnine.stats.stat import stat
 
 if TYPE_CHECKING:
     import pandas as pd
-
     from plotnine.iapi import panel_scales
 
 
