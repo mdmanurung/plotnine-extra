@@ -7,3 +7,4 @@ Worked examples showing how to use plotnine-extra.
    :maxdepth: 1
 
    basic-barplot
+   stat-pwc
