@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import numpy as np
 import pandas as pd
 from plotnine.doctools import document
@@ -35,7 +37,7 @@ class stat_chull(stat):
         "na_rm": False,
     }
 
-    def compute_group(self, data, scales):
+    def compute_group(self, data, scales) -> pd.DataFrame:
         x = data["x"].to_numpy()
         y = data["y"].to_numpy()
 

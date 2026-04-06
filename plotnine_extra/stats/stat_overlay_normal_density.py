@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import numpy as np
 import pandas as pd
 from plotnine.doctools import document
@@ -47,7 +49,7 @@ class stat_overlay_normal_density(stat):
     }
     CREATES = {"density"}
 
-    def compute_group(self, data, scales):
+    def compute_group(self, data, scales) -> pd.DataFrame:
         x = data["x"].to_numpy(dtype=float)
         n = self.params["n"]
 

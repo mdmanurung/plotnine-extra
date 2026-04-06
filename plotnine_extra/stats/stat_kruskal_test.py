@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from plotnine.doctools import document
 
 from ._base_stat_test import _base_stat_test
