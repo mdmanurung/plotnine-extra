@@ -8,13 +8,14 @@ plotnine-extra (v0.1.0) is a Python extension package for plotnine that adds ext
 
 ## Part 1: Codebase Evaluation
 
-### Architecture: A (Excellent)
+### Architecture: B+ (Good, with one major gap)
 
 - Clean modular structure: `geoms/`, `stats/`, `positions/`, `composition/`, `facets/`, `themes/`, `utils/`, `data/`
 - ~10K lines across 80+ modules, average 125 lines/module (well-decomposed)
 - Proper separation of concerns: private helpers (`_*.py`), public API in `__init__.py`
 - Good use of design patterns: template method (`_base_stat_test`), mixins (`_PositionGeomMixin`), factories
 - Re-exports plotnine's entire API via `from plotnine import *` for seamless drop-in usage
+- **Critical issue:** The entire `facets/` module (8 classes) is unimplemented stubs -- every class contains only `__init__` + a `# TODO` comment. `facet_grid2`, `facet_wrap2`, `facet_manual`, `facet_nested`, `facet_nested_wrap`, `facetted_pos_scales`, and all strip classes are non-functional despite being exported in `__init__.py`
 
 ### Code Quality: A-
 
@@ -29,6 +30,10 @@ plotnine-extra (v0.1.0) is a Python extension package for plotnine that adds ext
 - `_plotnine_version` imported but unused (line 67 of `__init__.py`)
 - Some modules could benefit from more inline comments on non-obvious math (e.g., beeswarm algorithms)
 - Markdown parser in `geom_richtext.py` uses regex - fragile for complex nested markup
+- **Bug:** `geom_bracket.draw_group()` receives a `coord` parameter but never uses it -- draws directly to `ax.plot()`/`ax.text()` without calling `coord.transform()`, breaking non-Cartesian coordinate systems
+- **Bug:** `stat_pwc._adjust_pvalues()` silently falls back to Bonferroni when user requests Hommel's method (line 449-452), with only a code comment acknowledging it. Should raise `NotImplementedError` or use `statsmodels.stats.multitest.multipletests`
+- `geom_richtext` and `geom_textbox` share duplicated bbox construction and color handling logic
+- R-style dot-separated method names (`"wilcox.test"`, `"t.test"`) used instead of Python underscore conventions
 
 ### API Design: A
 
@@ -67,7 +72,28 @@ plotnine-extra (v0.1.0) is a Python extension package for plotnine that adds ext
 
 ---
 
-## Part 2: Feature Proposals
+## Part 2: Bugs & Issues to Fix
+
+### Bug 1: Facets module is entirely unimplemented
+- **Files:** All files in `plotnine_extra/facets/` (`facet_wrap2.py`, `facet_grid2.py`, `facet_manual.py`, `facet_nested.py`, `facet_nested_wrap.py`, `facetted_pos_scales.py`, `scale_facet.py`, and all `strips/*.py`)
+- **Issue:** Every class contains only `__init__()` with a `# TODO` comment. None of the override methods (`compute_layout`, `train_position_scales`, strip rendering) are implemented. These are exported in the public API but non-functional
+- **Priority:** High -- either implement or remove from public API to avoid misleading users
+
+### Bug 2: `geom_bracket` bypasses coordinate transformation
+- **File:** `plotnine_extra/geoms/geom_bracket.py` (lines 63-119)
+- **Issue:** `draw_group()` receives `coord` but never calls `coord.transform()`. Draws directly to `ax.plot()` and `ax.text()` using raw data coordinates. Breaks with non-Cartesian coordinate systems
+
+### Bug 3: `stat_pwc` silently falls back to Bonferroni for Hommel correction
+- **File:** `plotnine_extra/stats/stat_pwc.py` (lines 449-452)
+- **Issue:** When user requests `method="hommel"`, the code silently applies Bonferroni instead, with only a code comment. Should either implement Hommel (via `statsmodels`) or raise an error
+
+### Minor: Unused `_plotnine_version` import
+- **File:** `plotnine_extra/__init__.py` (line 67)
+- **Issue:** Imported but never used. Should either wire up for compatibility checking or remove
+
+---
+
+## Part 3: Feature Proposals
 
 ### Priority 1: High Impact, Moderate Effort
 
@@ -166,6 +192,23 @@ plotnine-extra (v0.1.0) is a Python extension package for plotnine that adds ext
 - **Why:** Increasingly used in data journalism and scientific papers
 - **Effort:** High, but unique in the plotnine ecosystem
 
+#### 14. DataFrame `.plot_gg` accessor -- Pythonic API
+
+- **What:** Register a pandas accessor for quick ggplot generation: `df.plot_gg.scatter("x", "y", color="group")`
+- **Why:** Leverages Python's accessor pattern (like `.str`, `.dt`) for a genuinely Pythonic API that R does not have
+- **Files:** `plotnine_extra/pandas_accessor.py`
+
+#### 15. `stat_slabinterval` / `geom_slabinterval` -- Port of ggdist
+
+- **What:** Slab+interval plots, eye plots, half-eye plots for distributional visualization
+- **Why:** Extremely impactful for Bayesian analysis workflows popular in Python
+- **Files:** `plotnine_extra/stats/stat_slabinterval.py`, `plotnine_extra/geoms/geom_slabinterval.py`
+
+#### 16. `coord_radar` -- Radar/spider charts
+
+- **What:** Radar chart coordinate system for multi-variate comparison
+- **Why:** Commonly requested, no plotnine solution exists
+
 ### Priority 4: Quality & Infrastructure Improvements
 
 #### 14. Facets module test coverage
@@ -195,6 +238,17 @@ plotnine-extra (v0.1.0) is a Python extension package for plotnine that adds ext
 
 ## Implementation Priority Summary
 
+### Bugs (Fix First)
+
+| Bug | Issue | Severity | Effort |
+|-----|-------|----------|--------|
+| Facets module stubs | All 8 facet/strip classes are unimplemented | Critical | Large |
+| `geom_bracket` coord | Bypasses `coord.transform()` | Medium | Small |
+| `stat_pwc` Hommel | Silent Bonferroni fallback | Medium | Small |
+| Unused `_plotnine_version` | Imported but never used | Low | Trivial |
+
+### New Features
+
 | # | Feature | Impact | Effort | Category |
 |---|---------|--------|--------|----------|
 | 1 | `geom_text_repel` / `geom_label_repel` | Very High | High | Geom |
@@ -210,7 +264,15 @@ plotnine-extra (v0.1.0) is a Python extension package for plotnine that adds ext
 | 11 | Waffle charts | Medium | Low | Geom |
 | 12 | 2D binned summaries | Low | Low | Stat |
 | 13 | Sankey/alluvial diagrams | Medium | High | Geom |
-| 14 | Facets test coverage | High | Medium | Testing |
-| 15 | Raise coverage to 70%+ | Medium | Medium | Testing |
-| 16 | Expand vignettes | High | Medium | Docs |
-| 17 | Version compatibility | Low | Low | Infra |
+| 14 | DataFrame `.plot_gg` accessor | Medium | Small | Novel |
+| 15 | `stat_slabinterval` (ggdist) | High | Large | Stat |
+| 16 | `coord_radar` | Medium | Medium | Coord |
+
+### Quality Improvements
+
+| # | Improvement | Impact | Effort |
+|---|-------------|--------|--------|
+| Q1 | Facets test coverage | High | Medium |
+| Q2 | Raise coverage to 70%+ | Medium | Medium |
+| Q3 | Expand vignettes | High | Medium |
+| Q4 | Version compatibility layer | Low | Low |
