@@ -6,7 +6,7 @@ license = {text = "MIT"}
 authors = [
   {name = "Hassan Kibirige", email = "has2k1@gmail.com"},
 ]
-version = "0.1.0"
+version = "0.2.0"
 readme = "README.md"
 classifiers = [
     "Intended Audience :: Science/Research",
