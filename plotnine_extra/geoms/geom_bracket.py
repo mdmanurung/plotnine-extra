@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
-import numpy as np
 from plotnine.doctools import document
 from plotnine.geoms.geom import geom
 from plotnine.geoms.geom_path import geom_path
@@ -67,6 +66,8 @@ class geom_bracket(geom):
         ax: Axes,
         params: dict[str, Any],
     ):
+        import pandas as _pd
+
         tip_length = params.get("tip_length", 0.02)
         bracket_nudge_y = params.get("bracket_nudge_y", 0)
         label_size = params.get("label_size", 8)
@@ -84,30 +85,44 @@ class geom_bracket(geom):
             y_range = panel_params.y.range
             tip = tip_length * (y_range[1] - y_range[0])
 
-            # Draw the bracket: two tips + horizontal bar
-            bracket_x = [
-                xmin, xmin, xmax, xmax,
-            ]
-            bracket_y = [
-                y - tip, y, y, y - tip,
-            ]
+            # Build bracket coordinates and transform
+            x_mid = (xmin + xmax) / 2
+            y_text = y + tip * 0.3 + vjust
+
+            bracket_df = _pd.DataFrame(
+                {
+                    "x": [
+                        xmin,
+                        xmin,
+                        xmax,
+                        xmax,
+                    ],
+                    "y": [
+                        y - tip,
+                        y,
+                        y,
+                        y - tip,
+                    ],
+                }
+            )
+            bracket_df = coord.transform(bracket_df, panel_params)
+
+            label_df = _pd.DataFrame({"x": [x_mid], "y": [y_text]})
+            label_df = coord.transform(label_df, panel_params)
 
             ax.plot(
-                bracket_x,
-                bracket_y,
+                bracket_df["x"].to_numpy(),
+                bracket_df["y"].to_numpy(),
                 color=color,
                 alpha=alpha,
                 linewidth=0.75,
                 solid_capstyle="butt",
             )
 
-            # Draw the label centered above the bracket
-            x_mid = (xmin + xmax) / 2
-            y_text = y + tip * 0.3 + vjust
             if label:
                 ax.text(
-                    x_mid,
-                    y_text,
+                    label_df["x"].iloc[0],
+                    label_df["y"].iloc[0],
                     str(label),
                     ha="center",
                     va="bottom",
@@ -115,5 +130,3 @@ class geom_bracket(geom):
                     color=color,
                     alpha=alpha,
                 )
-
-        return np.nan

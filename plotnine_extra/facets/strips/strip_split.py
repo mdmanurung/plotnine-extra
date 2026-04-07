@@ -29,9 +29,10 @@ class strip_split(Strip):
 
     def __init__(
         self,
-        position: Sequence[
-            Literal["top", "bottom", "left", "right"]
-        ] = ("top", "right"),
+        position: Sequence[Literal["top", "bottom", "left", "right"]] = (
+            "top",
+            "right",
+        ),
     ):
         self.position = list(position)
 
