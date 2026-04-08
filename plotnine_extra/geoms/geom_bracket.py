@@ -4,13 +4,22 @@ from typing import TYPE_CHECKING, Any
 
 from plotnine.doctools import document
 from plotnine.geoms.geom import geom
-from plotnine.geoms.geom_path import geom_path
 
 if TYPE_CHECKING:
     import pandas as pd
     from matplotlib.axes import Axes
+    from matplotlib.offsetbox import DrawingArea
     from plotnine.coords.coord import coord
     from plotnine.iapi import panel_view
+
+
+def _bracket_draw_legend(
+    data: "pd.Series",
+    da: "DrawingArea",
+    lyr,
+) -> "DrawingArea":
+    """Brackets carry no useful legend, return an empty area."""
+    return da
 
 
 @document
@@ -37,6 +46,10 @@ class geom_bracket(geom):
     vjust : float, default=0
         Vertical justification of the label relative
         to the bracket.
+    bracket : bool, default=True
+        If ``False``, suppress the bracket line and draw only
+        the label. Mirrors the ``bracket`` parameter of
+        ``ggcompare::geom_bracket``.
     """
 
     _aesthetics_doc = """
@@ -55,8 +68,9 @@ class geom_bracket(geom):
         "bracket_nudge_y": 0,
         "label_size": 8,
         "vjust": 0,
+        "bracket": True,
     }
-    draw_legend = staticmethod(geom_path.draw_legend)
+    draw_legend = staticmethod(_bracket_draw_legend)
 
     @staticmethod
     def draw_group(
@@ -72,6 +86,7 @@ class geom_bracket(geom):
         bracket_nudge_y = params.get("bracket_nudge_y", 0)
         label_size = params.get("label_size", 8)
         vjust = params.get("vjust", 0)
+        draw_bracket = params.get("bracket", True)
 
         for _, row in data.iterrows():
             xmin = row["xmin"]
@@ -110,14 +125,15 @@ class geom_bracket(geom):
             label_df = _pd.DataFrame({"x": [x_mid], "y": [y_text]})
             label_df = coord.transform(label_df, panel_params)
 
-            ax.plot(
-                bracket_df["x"].to_numpy(),
-                bracket_df["y"].to_numpy(),
-                color=color,
-                alpha=alpha,
-                linewidth=0.75,
-                solid_capstyle="butt",
-            )
+            if draw_bracket:
+                ax.plot(
+                    bracket_df["x"].to_numpy(),
+                    bracket_df["y"].to_numpy(),
+                    color=color,
+                    alpha=alpha,
+                    linewidth=0.75,
+                    solid_capstyle="butt",
+                )
 
             if label:
                 ax.text(

@@ -9,6 +9,7 @@ from .stat_anova_test import stat_anova_test
 from .stat_central_tendency import stat_central_tendency
 from .stat_centroid import stat_centroid
 from .stat_chull import stat_chull
+from .stat_compare import stat_compare
 from .stat_compare_means import stat_compare_means
 from .stat_conf_ellipse import stat_conf_ellipse
 from .stat_cor import stat_cor
@@ -39,6 +40,7 @@ __all__ = (
     "stat_central_tendency",
     "stat_centroid",
     "stat_chull",
+    "stat_compare",
     "stat_compare_means",
     "stat_conf_ellipse",
     "stat_cor",
