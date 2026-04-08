@@ -189,6 +189,21 @@ class stat_compare(stat):
         if data.empty:
             return pd.DataFrame()
 
+        # Horizontal-orientation guard. ggcompare's R version
+        # swaps x/y via ``flip_data`` when the discrete axis is
+        # on the y. plotnine 0.15/0.16 does not expose a clean
+        # equivalent, so we detect the mismatch (continuous x +
+        # discrete-looking y) and refuse rather than silently
+        # producing wrong brackets.
+        if _is_horizontal(data):
+            raise NotImplementedError(
+                "stat_compare does not yet support horizontal "
+                "orientation (continuous x with discrete y). "
+                "Build the plot with the discrete variable on "
+                "the x-axis and add coord_flip() if you need a "
+                "horizontal layout."
+            )
+
         # Add a synthetic group column if missing
         if "group" not in data.columns:
             data = data.copy()
@@ -242,6 +257,22 @@ class stat_compare(stat):
                 method_args=method_args,
                 parametric=parametric,
             )
+
+        # Apply correction at the panel level. compute_layer will
+        # re-adjust at the layer level when ``panel_indep`` is
+        # False, mirroring ggcompare's two-stage logic so that
+        # ``panel_indep=True`` actually returns corrected
+        # p-values per panel.
+        if not result.empty and "p" in result.columns:
+            p_arr = result["p"].to_numpy(dtype=float)
+            valid = ~np.isnan(p_arr)
+            if valid.any():
+                adj = _adjust_pvalues(p_arr[valid], correction)
+                q = p_arr.copy()
+                q[valid] = adj
+                result = result.copy()
+                result["q"] = q
+
         return preserve_panel_columns(result, data)
 
     # ------------------------------------------------------
@@ -277,11 +308,16 @@ class stat_compare(stat):
             labels=user_labels,
         )
 
-        # Hide labels above the cutoff
+        # Hide labels above the cutoff and shift the remaining
+        # brackets down by their ``space`` so the layout stays
+        # tight (matches R ggcompare's compute_layer).
         cutoff = params.get("cutoff")
         if cutoff is not None:
-            mask = out["q"].to_numpy(dtype=float) > cutoff
+            q_arr = out["q"].to_numpy(dtype=float)
+            mask = q_arr > cutoff
             out.loc[mask, "label"] = ""
+            if "PANEL" in out.columns and "space" in out.columns:
+                out = _shift_hidden_brackets(out)
 
         # Drop rows where every test stat is NA
         keep = ~(out["p"].isna() & out["q"].isna() & out["method"].isna())
@@ -409,8 +445,9 @@ class stat_compare(stat):
                 )
 
         df = pd.DataFrame(rows)
-        # Initial q = p (will be re-adjusted in compute_layer)
-        df["q"] = df["p"]
+        # ``q`` is set later by ``compute_panel`` after the
+        # panel-level correction step.
+        df["q"] = np.nan
         return df
 
     def _compute_explicit(
@@ -476,8 +513,90 @@ class stat_compare(stat):
                 }
             )
         df = pd.DataFrame(rows)
-        df["q"] = df["p"]
+        df["q"] = np.nan
         return df
+
+
+# ------------------------------------------------------------
+# Bracket layout helpers
+# ------------------------------------------------------------
+
+
+def _shift_hidden_brackets(data: pd.DataFrame) -> pd.DataFrame:
+    """
+    Shift visible brackets down to fill gaps left by hidden
+    labels, mirroring ggcompare's compute_layer behaviour.
+
+    For each panel, sort by ``ymin`` descending, walk the rows
+    and for every row whose ``label`` is empty but whose ``p``
+    is not NaN, subtract ``space`` from the ``ymin`` / ``ymax``
+    of all rows up to and including that index. The original
+    row order is restored before returning.
+    """
+    if "PANEL" not in data.columns:
+        return data
+
+    pieces: list[pd.DataFrame] = []
+    for _, panel in data.groupby("PANEL"):
+        panel = panel.copy()
+        panel["_orig_idx"] = np.arange(len(panel))
+        panel = panel.sort_values("ymin", ascending=False).reset_index(
+            drop=True
+        )
+        labels = panel["label"].to_numpy()
+        p_vals = panel["p"].to_numpy(dtype=float).copy()
+        ymin = panel["ymin"].to_numpy(dtype=float).copy()
+        ymax = panel["ymax"].to_numpy(dtype=float).copy()
+        space = panel["space"].to_numpy(dtype=float).copy()
+        for i in range(len(panel)):
+            if labels[i] == "" and not np.isnan(p_vals[i]):
+                # Shift this row and every row above it
+                ymin[: i + 1] -= space[: i + 1]
+                ymax[: i + 1] -= space[: i + 1]
+        panel["ymin"] = ymin
+        panel["ymax"] = ymax
+        panel = panel.sort_values("_orig_idx").drop(columns="_orig_idx")
+        pieces.append(panel)
+    return pd.concat(pieces, ignore_index=True)
+
+
+# ------------------------------------------------------------
+# Orientation detection
+# ------------------------------------------------------------
+
+
+def _is_horizontal(data: pd.DataFrame) -> bool:
+    """
+    Heuristic detection of horizontal orientation.
+
+    plotnine maps a discrete scale to integer codes ``1..N``
+    (as floats) so a *vertical* boxplot has discrete-coded
+    ``x`` (few unique integer-valued floats) and a continuous
+    ``y``. A *horizontal* plot (``aes("displ", "class")``) has
+    continuous ``x`` and discrete-coded ``y``.
+
+    We flag the horizontal case when ``y`` looks discrete
+    (few unique values, all integers) but ``x`` does not.
+    """
+    if "x" not in data.columns or "y" not in data.columns:
+        return False
+    x_vals = pd.to_numeric(data["x"], errors="coerce").dropna()
+    y_vals = pd.to_numeric(data["y"], errors="coerce").dropna()
+    if x_vals.empty or y_vals.empty:
+        return False
+
+    def _looks_discrete(s: pd.Series) -> bool:
+        # Must be all (approximately) integer and have a small
+        # number of unique levels — matches how plotnine 0.15
+        # encodes a discrete scale position.
+        arr = s.to_numpy(dtype=float)
+        if not np.allclose(arr, np.round(arr)):
+            return False
+        return s.nunique() <= 50
+
+    x_discrete = _looks_discrete(x_vals)
+    y_discrete = _looks_discrete(y_vals)
+    return (not x_discrete) and y_discrete
 
 
 # ------------------------------------------------------------
