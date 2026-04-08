@@ -5,11 +5,37 @@ from .conveniences import (
     elem_list_text,
     weave_factors,
 )
+from .summary import (
+    add_summary,
+    desc_statby,
+    get_summary_stats,
+    mean_ci,
+    mean_range,
+    mean_sd,
+    mean_se_,
+    median_hilow_,
+    median_iqr,
+    median_mad,
+    median_q1q3,
+    median_range,
+)
 
 __all__ = (
+    "add_summary",
     "center_limits",
+    "desc_statby",
     "distribute_args",
     "elem_list_rect",
     "elem_list_text",
+    "get_summary_stats",
+    "mean_ci",
+    "mean_range",
+    "mean_sd",
+    "mean_se_",
+    "median_hilow_",
+    "median_iqr",
+    "median_mad",
+    "median_q1q3",
+    "median_range",
     "weave_factors",
 )
