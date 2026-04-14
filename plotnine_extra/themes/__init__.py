@@ -24,8 +24,53 @@ from typing import TYPE_CHECKING, Any, Literal, Sequence
 
 from plotnine.themes.elements.element_text import element_text
 
+from .styling import (  # noqa: E402
+    bgcolor as bgcolor,
+)
+from .styling import (
+    border as border,
+)
+from .styling import (
+    font as font,
+)
+from .styling import (
+    ggpar as ggpar,
+)
+from .styling import (
+    grids as grids,
+)
+from .styling import (
+    labs_pubr as labs_pubr,
+)
+from .styling import (
+    rotate as rotate,
+)
+from .styling import (
+    rotate_x_text as rotate_x_text,
+)
+from .styling import (
+    rotate_y_text as rotate_y_text,
+)
+from .styling import (
+    rremove as rremove,
+)
+from .styling import (
+    xscale as xscale,
+)
+from .styling import (
+    yscale as yscale,
+)
 from .theme_pub import (  # noqa: E402
+    clean_theme as clean_theme,
+)
+from .theme_pub import (
+    theme_classic2 as theme_classic2,
+)
+from .theme_pub import (
     theme_clean as theme_clean,
+)
+from .theme_pub import (
+    theme_cleveland as theme_cleveland,
 )
 from .theme_pub import (
     theme_nature as theme_nature,
@@ -34,10 +79,16 @@ from .theme_pub import (
     theme_poster as theme_poster,
 )
 from .theme_pub import (
+    theme_pubclean as theme_pubclean,
+)
+from .theme_pub import (
     theme_pubr as theme_pubr,
 )
 from .theme_pub import (
     theme_scientific as theme_scientific,
+)
+from .theme_pub import (
+    theme_transparent as theme_transparent,
 )
 
 if TYPE_CHECKING:

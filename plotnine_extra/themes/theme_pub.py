@@ -184,6 +184,152 @@ class theme_nature(theme_bw):
         )
 
 
+class theme_classic2(theme_bw):
+    """
+    A classic theme with axis lines and no panel border.
+
+    Port of ``ggpubr::theme_classic2``: white background, no
+    grid, axis lines on the left and bottom only.
+    """
+
+    def __init__(
+        self,
+        base_size: float = 12,
+        base_family: str = "",
+    ):
+        super().__init__(
+            base_size=base_size,
+            base_family=base_family,
+        )
+        self += theme(
+            panel_border=element_blank(),
+            panel_grid_major=element_blank(),
+            panel_grid_minor=element_blank(),
+            axis_line=element_line(color="black", size=0.5),
+            axis_ticks=element_line(color="black", size=0.5),
+        )
+
+
+class theme_pubclean(theme_bw):
+    """
+    Port of ``ggpubr::theme_pubclean``.
+
+    A minimal theme with horizontal grid lines and a clean
+    background. Useful for bar / dot charts.
+    """
+
+    def __init__(
+        self,
+        base_size: float = 12,
+        base_family: str = "",
+        flip: bool = False,
+    ):
+        super().__init__(
+            base_size=base_size,
+            base_family=base_family,
+        )
+        if flip:
+            major = theme(
+                panel_grid_major_x=element_line(color="grey80", size=0.4),
+                panel_grid_major_y=element_blank(),
+            )
+        else:
+            major = theme(
+                panel_grid_major_y=element_line(color="grey80", size=0.4),
+                panel_grid_major_x=element_blank(),
+            )
+        self += theme(
+            panel_border=element_blank(),
+            panel_grid_minor=element_blank(),
+            axis_line=element_line(color="black", size=0.4),
+            axis_ticks=element_line(color="black", size=0.4),
+            legend_position="bottom",
+            legend_key=element_rect(fill="white"),
+            legend_background=element_rect(fill="white"),
+        )
+        self += major
+
+
+class theme_cleveland(theme_bw):
+    """
+    Port of ``ggpubr::theme_cleveland``.
+
+    A theme suited to Cleveland-style dot plots, with horizontal
+    grid lines and no axis ticks on the y-axis.
+    """
+
+    def __init__(
+        self,
+        base_size: float = 12,
+        base_family: str = "",
+        flip: bool = True,
+    ):
+        super().__init__(
+            base_size=base_size,
+            base_family=base_family,
+        )
+        if flip:
+            self += theme(
+                panel_grid_major_y=element_line(
+                    color="grey70",
+                    size=0.4,
+                    linetype="dashed",
+                ),
+                panel_grid_minor=element_blank(),
+                panel_border=element_blank(),
+                axis_ticks_y=element_blank(),
+            )
+        else:
+            self += theme(
+                panel_grid_major_x=element_line(
+                    color="grey70",
+                    size=0.4,
+                    linetype="dashed",
+                ),
+                panel_grid_minor=element_blank(),
+                panel_border=element_blank(),
+                axis_ticks_x=element_blank(),
+            )
+
+
+class theme_transparent(theme):
+    """
+    Port of ``ggpubr::theme_transparent``.
+
+    Sets every panel / plot / legend background element to
+    transparent. Useful when overlaying plots on slides.
+    """
+
+    def __init__(self):
+        super().__init__(
+            panel_background=element_rect(fill="none", color="none"),
+            plot_background=element_rect(fill="none", color="none"),
+            panel_grid_major=element_blank(),
+            panel_grid_minor=element_blank(),
+            legend_background=element_rect(fill="none", color="none"),
+            legend_box_background=element_rect(fill="none", color="none"),
+        )
+
+
+class clean_theme(theme):
+    """
+    Port of ``ggpubr::clean_theme``.
+
+    Removes axis text, ticks, titles and grid lines while
+    keeping the data ink. Used to declutter ridge plots and
+    summary panels.
+    """
+
+    def __init__(self):
+        super().__init__(
+            axis_text=element_blank(),
+            axis_title=element_blank(),
+            axis_ticks=element_blank(),
+            axis_line=element_blank(),
+            panel_grid=element_blank(),
+        )
+
+
 class theme_poster(theme_minimal):
     """
     High-visibility theme for posters.
