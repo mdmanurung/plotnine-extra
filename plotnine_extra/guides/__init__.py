@@ -34,11 +34,17 @@ rendering hooks land in a future release.
 
 from __future__ import annotations
 
+import warnings
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from typing import Any, Callable, Sequence
+
+
+# Track which guide kinds have already warned so ``plot +
+# guide_axis_nested()`` does not repeat itself.
+_WARNED_KINDS: set[str] = set()
 
 
 __all__ = (
@@ -72,10 +78,38 @@ class GuideAxisSpec:
     options : dict
         Free-form keyword arguments captured from the call
         site.
+
+    Notes
+    -----
+    Adding a spec to a ``ggplot`` with ``+`` is currently a
+    **no-op** — the rendering hooks for axis guides are not
+    yet implemented on top of plotnine 0.15/0.16. The first
+    use of each guide kind in a session emits a
+    :class:`UserWarning` so scripts keep running but users
+    know the guide had no visual effect.
     """
 
     kind: str
     options: dict = field(default_factory=dict)
+
+    def __radd__(self, other):
+        # ``ggplot + guide_axis_*()``: emit a one-time warning
+        # per kind and return the plot unchanged so downstream
+        # operations keep working.
+        if self.kind not in _WARNED_KINDS:
+            _WARNED_KINDS.add(self.kind)
+            warnings.warn(
+                f"guide_axis_{self.kind} is not yet implemented "
+                "on top of plotnine and is currently a no-op. "
+                "The plot is returned unchanged.",
+                UserWarning,
+                stacklevel=2,
+            )
+        return other
+
+    def __add__(self, other):
+        # ``guide_axis_*() + ggplot`` — mirror of ``__radd__``.
+        return self.__radd__(other)
 
 
 def guide_axis_nested(

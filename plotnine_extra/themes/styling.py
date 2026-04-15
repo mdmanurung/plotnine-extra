@@ -73,7 +73,7 @@ def border(
 
 def grids(
     axis: str = "xy",
-    color: str = "grey92",
+    color: str = "#EBEBEB",
     size: float = 0.4,
     linetype: str = "solid",
 ):

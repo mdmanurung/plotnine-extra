@@ -38,13 +38,7 @@ class geom_text_aimed(geom_text):
     """
 
     DEFAULT_PARAMS = {
-        "stat": "identity",
-        "position": "identity",
-        "na_rm": False,
-        "parse": False,
-        "nudge_x": 0,
-        "nudge_y": 0,
-        "format_string": None,
+        **geom_text.DEFAULT_PARAMS,
     }
 
     def setup_data(self, data: "pd.DataFrame") -> "pd.DataFrame":

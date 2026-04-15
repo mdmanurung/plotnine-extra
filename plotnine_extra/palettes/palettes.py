@@ -195,8 +195,12 @@ def change_palette(plot, palette: "str | Sequence[str]"):
 
 def show_point_shapes():
     """
-    Return a small ``ggplot`` showing the available matplotlib
+    Return a small ``ggplot`` showing a set of matplotlib
     point shapes (mirrors ``ggpubr::show_point_shapes``).
+
+    Uses matplotlib's string marker codes rather than R's
+    integer shape codes — integer shapes are not valid
+    matplotlib markers and would crash the renderer.
     """
     import pandas as pd
     from plotnine import (
@@ -210,21 +214,35 @@ def show_point_shapes():
         theme_minimal,
     )
 
-    shapes = list(range(26))
+    # Common matplotlib markers with a short descriptive label.
+    shapes = [
+        ("o", "circle"),
+        ("s", "square"),
+        ("^", "triangle_up"),
+        ("v", "triangle_down"),
+        ("D", "diamond"),
+        ("P", "plus_filled"),
+        ("X", "x_filled"),
+        ("*", "star"),
+        ("p", "pentagon"),
+        ("h", "hexagon"),
+        ("<", "triangle_left"),
+        (">", "triangle_right"),
+    ]
     n = len(shapes)
-    rows = 5
+    rows = 4
     df = pd.DataFrame(
         {
-            "shape": shapes,
+            "shape": [s for s, _ in shapes],
             "x": [i % rows for i in range(n)],
             "y": [-(i // rows) for i in range(n)],
-            "label": [str(s) for s in shapes],
+            "label": [f"{s!r}\n{name}" for s, name in shapes],
         }
     )
     return (
         ggplot(df, aes("x", "y"))
-        + geom_point(aes(shape="shape"), size=6, fill="grey50")
-        + geom_text(aes(label="label"), nudge_y=-0.35, size=8)
+        + geom_point(aes(shape="shape"), size=6, fill="#7F7F7F")
+        + geom_text(aes(label="label"), nudge_y=-0.4, size=8)
         + scale_shape_identity()
         + labs(title="Point shapes", x=None, y=None)
         + theme_minimal()

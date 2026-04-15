@@ -101,15 +101,19 @@ def mean_se_(x, mult: float = 1.0) -> dict:
 
 
 def mean_range(x) -> dict:
-    """Return the mean and the data minimum / maximum."""
+    """
+    Return the mean and ``mean ± (max - min)``.
+
+    Matches ggpubr's definition where ``range = max - min`` is
+    applied symmetrically around the mean rather than using
+    the raw min / max bounds.
+    """
     a = _as_array(x)
     if a.size == 0:
         return {"y": np.nan, "ymin": np.nan, "ymax": np.nan}
-    return {
-        "y": float(np.mean(a)),
-        "ymin": float(np.min(a)),
-        "ymax": float(np.max(a)),
-    }
+    m = float(np.mean(a))
+    rng = float(np.max(a) - np.min(a))
+    return {"y": m, "ymin": m - rng, "ymax": m + rng}
 
 
 def median_iqr(x, mult: float = 1.0) -> dict:
@@ -151,24 +155,32 @@ def median_q1q3(x) -> dict:
 
 
 def median_range(x) -> dict:
-    """Return the median and the data minimum / maximum."""
+    """
+    Return the median and ``median ± (max - min)``.
+
+    Matches ggpubr's convention where ``range = max - min`` is
+    applied symmetrically around the median rather than using
+    the raw min / max bounds.
+    """
     a = _as_array(x)
     if a.size == 0:
         return {"y": np.nan, "ymin": np.nan, "ymax": np.nan}
-    return {
-        "y": float(np.median(a)),
-        "ymin": float(np.min(a)),
-        "ymax": float(np.max(a)),
-    }
+    m = float(np.median(a))
+    rng = float(np.max(a) - np.min(a))
+    return {"y": m, "ymin": m - rng, "ymax": m + rng}
 
 
 def median_hilow_(x, conf_int: float = 0.95) -> dict:
     """
-    Return the median and the lower/upper confidence bounds.
+    Return the median and percentile-based confidence bounds.
 
-    Uses the order-statistic interval based on the binomial
-    distribution, matching the behaviour of
-    ``ggpubr::median_hilow_``.
+    Matches ggpubr's definition:
+    ``ymin = quantile(x, (1 - ci) / 2)``,
+    ``ymax = quantile(x, (1 + ci) / 2)``.
+
+    Note: this differs from ``Hmisc::smedian.hilow``, which
+    uses an order-statistic interval. ggpubr deliberately uses
+    the simpler percentile form — we follow suit.
     """
     a = _as_array(x)
     n = a.size
@@ -177,18 +189,10 @@ def median_hilow_(x, conf_int: float = 0.95) -> dict:
     m = float(np.median(a))
     if n < 2:
         return {"y": m, "ymin": m, "ymax": m}
-    alpha = 1 - conf_int
-    # Order-statistic indices that bracket the median CI
-    a_sorted = np.sort(a)
-    lo_idx = int(_sps.binom.ppf(alpha / 2, n, 0.5))
-    hi_idx = int(_sps.binom.ppf(1 - alpha / 2, n, 0.5))
-    lo_idx = max(0, min(n - 1, lo_idx))
-    hi_idx = max(0, min(n - 1, hi_idx))
-    return {
-        "y": m,
-        "ymin": float(a_sorted[lo_idx]),
-        "ymax": float(a_sorted[hi_idx]),
-    }
+    lo_q = (1.0 - conf_int) / 2.0
+    hi_q = (1.0 + conf_int) / 2.0
+    lo, hi = np.quantile(a, [lo_q, hi_q])
+    return {"y": m, "ymin": float(lo), "ymax": float(hi)}
 
 
 _SUMMARY_FUNS = {
@@ -376,7 +380,7 @@ def add_summary(
     fill: str = "white",
     size: float = 1.0,
     width: float | None = None,
-    shape: int = 19,
+    shape: "str | int" = "o",
     linetype: str = "solid",
     show_legend: bool = False,
     **kwargs,
@@ -407,9 +411,9 @@ def add_summary(
                 f"Unknown summary function {fun!r}; expected one "
                 f"of {sorted(_FUN_DATA_ALIASES)}"
             )
-        fun_data = _FUN_DATA_ALIASES[fun]
+        raw_fun = _FUN_DATA_ALIASES[fun]
     else:
-        fun_data = fun
+        raw_fun = fun
 
     geom_map = {
         "pointrange": "pointrange",
@@ -427,17 +431,55 @@ def add_summary(
             f"{sorted(geom_map)}"
         )
 
+    # plotnine's ``stat_summary(fun_data=...)`` expects a
+    # callable returning a single-row ``pd.DataFrame`` with
+    # ``y`` / ``ymin`` / ``ymax`` columns. Our helpers return a
+    # plain ``dict`` so they stay ergonomic in scripts; wrap
+    # them here so ``add_summary`` works end-to-end.
+    #
+    # For the ``upper_*`` / ``lower_*`` error_plot variants we
+    # also clamp ``ymin`` / ``ymax`` to ``y`` so only the upper
+    # or lower half of the interval is drawn, matching
+    # ggpubr's ``.format_error`` behaviour.
+    truncate = None
+    if error_plot.startswith("upper_"):
+        truncate = "upper"
+    elif error_plot.startswith("lower_"):
+        truncate = "lower"
+
+    def _as_df(values) -> "pd.DataFrame":
+        out = raw_fun(values)
+        if isinstance(out, pd.DataFrame):
+            d = out.iloc[0].to_dict()
+        elif isinstance(out, pd.Series):
+            d = out.to_dict()
+        else:
+            d = dict(out)
+        if truncate == "upper":
+            d["ymin"] = d.get("y", np.nan)
+        elif truncate == "lower":
+            d["ymax"] = d.get("y", np.nan)
+        return pd.DataFrame({k: [v] for k, v in d.items()})
+
+    geom_name = geom_map[error_plot]
     layer_kwargs = dict(
-        geom=geom_map[error_plot],
-        fun_data=fun_data,
+        geom=geom_name,
+        fun_data=_as_df,
         color=color,
-        fill=fill,
         size=size,
-        shape=shape,
         linetype=linetype,
         show_legend=show_legend,
     )
-    if width is not None:
+    # ``fill`` / ``shape`` are point aesthetics — only meaningful
+    # when the underlying geom actually draws points.
+    if geom_name in {"pointrange", "crossbar"}:
+        layer_kwargs["fill"] = fill
+    if geom_name == "pointrange":
+        layer_kwargs["shape"] = shape
+    if width is not None and geom_name in {
+        "errorbar",
+        "crossbar",
+    }:
         layer_kwargs["width"] = width
     layer_kwargs.update(kwargs)
 

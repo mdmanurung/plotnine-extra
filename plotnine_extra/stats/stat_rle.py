@@ -13,6 +13,8 @@ import pandas as pd
 from plotnine.doctools import document
 from plotnine.stats.stat import stat
 
+from ._common import preserve_panel_columns
+
 
 @document
 class stat_rle(stat):
@@ -73,4 +75,7 @@ class stat_rle(stat):
                     "ymax": 1.0,
                 }
             )
-        return pd.DataFrame(rows)
+        result = pd.DataFrame(rows)
+        # Carry PANEL / group through so plotnine's position
+        # scale training can join against the computed rows.
+        return preserve_panel_columns(result, data)
