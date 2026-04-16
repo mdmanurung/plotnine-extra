@@ -230,12 +230,12 @@ class theme_pubclean(theme_bw):
         )
         if flip:
             major = theme(
-                panel_grid_major_x=element_line(color="grey80", size=0.4),
+                panel_grid_major_x=element_line(color="#CCCCCC", size=0.4),
                 panel_grid_major_y=element_blank(),
             )
         else:
             major = theme(
-                panel_grid_major_y=element_line(color="grey80", size=0.4),
+                panel_grid_major_y=element_line(color="#CCCCCC", size=0.4),
                 panel_grid_major_x=element_blank(),
             )
         self += theme(
@@ -271,7 +271,7 @@ class theme_cleveland(theme_bw):
         if flip:
             self += theme(
                 panel_grid_major_y=element_line(
-                    color="grey70",
+                    color="#B3B3B3",
                     size=0.4,
                     linetype="dashed",
                 ),
@@ -282,7 +282,7 @@ class theme_cleveland(theme_bw):
         else:
             self += theme(
                 panel_grid_major_x=element_line(
-                    color="grey70",
+                    color="#B3B3B3",
                     size=0.4,
                     linetype="dashed",
                 ),

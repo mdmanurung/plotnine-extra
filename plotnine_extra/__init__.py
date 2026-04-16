@@ -89,7 +89,7 @@ from .composition import (
     plot_layout,
     plot_spacer,
 )
-from .coords import coord_axes_inside
+from .coords import apply_axes_inside, coord_axes_inside
 from .geoms import (
     annotation_stripes,
     geom_beeswarm,
@@ -308,6 +308,7 @@ _extra_all = (
     "guide_stringlegend",
     # Coords
     "coord_axes_inside",
+    "apply_axes_inside",
     # Stats
     "stat_anova_test",
     "stat_central_tendency",

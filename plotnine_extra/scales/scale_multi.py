@@ -49,18 +49,25 @@ def _build_scales(
 
     for aes_name, pal in palettes.items():
         cols = list(_resolve_palette(pal))
+        # plotnine's ``scale`` base class iterates
+        # ``aesthetics`` as a sequence, so passing a bare
+        # string splits it into individual characters. Always
+        # wrap in a list.
+        aesthetics = (
+            [aes_name] if isinstance(aes_name, str) else list(aes_name)
+        )
         if discrete:
             layers.append(
                 manual_cls(
                     values=cols,
-                    aesthetics=aes_name,
+                    aesthetics=aesthetics,
                 )
             )
         else:
             layers.append(
                 gradient_cls(
                     colors=cols,
-                    aesthetics=aes_name,
+                    aesthetics=aesthetics,
                 )
             )
     return layers

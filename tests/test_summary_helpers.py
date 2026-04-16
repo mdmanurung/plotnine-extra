@@ -46,7 +46,11 @@ def test_mean_ci(x):
 
 def test_mean_range(x):
     out = mean_range(x)
-    assert (out["y"], out["ymin"], out["ymax"]) == (5.5, 1.0, 10.0)
+    # ggpubr: range = max - min = 9, mean = 5.5, so
+    # ymin = 5.5 - 9 = -3.5, ymax = 5.5 + 9 = 14.5
+    assert out["y"] == pytest.approx(5.5)
+    assert out["ymin"] == pytest.approx(-3.5)
+    assert out["ymax"] == pytest.approx(14.5)
 
 
 def test_median_iqr(x):
@@ -70,7 +74,18 @@ def test_median_q1q3(x):
 
 def test_median_range(x):
     out = median_range(x)
-    assert (out["ymin"], out["ymax"]) == (1.0, 10.0)
+    # ggpubr: range = max - min = 9, median = 5.5
+    assert out["y"] == pytest.approx(5.5)
+    assert out["ymin"] == pytest.approx(-3.5)
+    assert out["ymax"] == pytest.approx(14.5)
+
+
+def test_median_hilow_quantile_definition(x):
+    out = median_hilow_(x, conf_int=0.95)
+    # ggpubr: ymin = quantile(x, 0.025), ymax = quantile(x, 0.975)
+    assert out["y"] == pytest.approx(5.5)
+    assert out["ymin"] == pytest.approx(np.quantile(x, 0.025))
+    assert out["ymax"] == pytest.approx(np.quantile(x, 0.975))
 
 
 def test_median_hilow(x):

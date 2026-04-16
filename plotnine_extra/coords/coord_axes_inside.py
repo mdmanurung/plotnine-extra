@@ -21,6 +21,7 @@ has been drawn.
 
 from __future__ import annotations
 
+import functools
 from typing import TYPE_CHECKING
 
 from plotnine.coords.coord_cartesian import coord_cartesian
@@ -47,6 +48,16 @@ class coord_axes_inside(coord_cartesian):
         If ``True``, tick labels are drawn alongside the
         relocated spine; otherwise the standard outer labels
         are kept.
+
+    Notes
+    -----
+    Plotnine 0.15/0.16 does not expose a post-draw hook on the
+    coord class. This implementation therefore wraps
+    :meth:`ggplot.draw` via ``__radd__`` so that
+    :func:`apply_axes_inside` is invoked on the resulting
+    matplotlib :class:`~matplotlib.figure.Figure` after
+    plotnine finishes rendering. The standard axis spines are
+    otherwise left alone by ``coord_cartesian``.
     """
 
     is_linear = True
@@ -64,6 +75,38 @@ class coord_axes_inside(coord_cartesian):
         self.xintercept = xintercept
         self.yintercept = yintercept
         self.labels_inside = labels_inside
+
+    def __radd__(self, other):
+        # Attach the coord the normal plotnine way, then wrap
+        # the ggplot's ``draw`` method so the spines get moved
+        # once matplotlib finishes rendering.
+        plot = super().__radd__(other)
+
+        # Avoid wrapping the same ggplot twice (e.g. when the
+        # user chains two coord_axes_inside calls).
+        if getattr(plot.draw, "_axes_inside_wrapped", False):
+            return plot
+
+        orig_draw = plot.draw
+        xintercept = self.xintercept
+        yintercept = self.yintercept
+        labels_inside = self.labels_inside
+
+        @functools.wraps(orig_draw)
+        def _wrapped_draw(*args, **kwargs):
+            fig = orig_draw(*args, **kwargs)
+            if fig is not None:
+                apply_axes_inside(
+                    fig,
+                    xintercept=xintercept,
+                    yintercept=yintercept,
+                    labels_inside=labels_inside,
+                )
+            return fig
+
+        _wrapped_draw._axes_inside_wrapped = True  # type: ignore[attr-defined]
+        plot.draw = _wrapped_draw  # type: ignore[method-assign]
+        return plot
 
 
 def apply_axes_inside(
