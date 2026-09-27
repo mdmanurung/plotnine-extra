@@ -44,14 +44,9 @@ def at_panel(layer: Any, expr: PanelSelector) -> Any:
         return [at_panel(item, expr) for item in layer]
     if not hasattr(layer, "compute_aesthetics"):
         # A geom was passed instead of a built layer; turn it into one.
-        if hasattr(layer, "to_layer"):
-            # plotnine < 0.16
-            layer = layer.to_layer()
-        else:
-            # plotnine >= 0.16 dropped geom.to_layer(); build directly
-            from plotnine.layer import layer as _layer
+        from plotnine.layer import layer as _layer
 
-            layer = _layer(geom=layer)
+        layer = _layer(geom=layer)
 
     _install_panel_filter(layer, expr)
     return layer
@@ -161,17 +156,9 @@ def _apply_panel_size_spec(
     facet._force_panel_total_width = total_width
     facet._force_panel_total_height = total_height
 
-    # plotnine renamed the panels-gridspec builder from
-    # _get_panels_gridspec (<0.16) to _make_gridspec (>=0.16); wrap whichever
-    # this plotnine exposes.
-    method_name = (
-        "_make_gridspec"
-        if hasattr(facet, "_make_gridspec")
-        else "_get_panels_gridspec"
-    )
     if hasattr(facet, "_plotnine_extra_original_gridspec"):
         return
-    original = getattr(facet, method_name)
+    original = facet._make_gridspec
     facet._plotnine_extra_original_gridspec = original
 
     def _panels_gridspec(self):
@@ -201,7 +188,7 @@ def _apply_panel_size_spec(
             **ratios,
         )
 
-    setattr(facet, method_name, MethodType(_panels_gridspec, facet))
+    facet._make_gridspec = MethodType(_panels_gridspec, facet)
 
 
 def _ratios_for(

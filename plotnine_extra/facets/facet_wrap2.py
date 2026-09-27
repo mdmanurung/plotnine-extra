@@ -9,16 +9,17 @@ from typing import TYPE_CHECKING, Literal
 import numpy as np
 from plotnine.facets.facet_wrap import facet_wrap
 
-from ..guides import apply_axis_guides
+from ._axis_guides import AxisGuideFacet
 from .scale_facet import apply_scale_facets
 
 if TYPE_CHECKING:
     from typing import Optional, Sequence
 
     import pandas as pd
+    from plotnine.scales.scales import Scales
 
 
-class facet_wrap2(facet_wrap):
+class facet_wrap2(AxisGuideFacet, facet_wrap):
     """
     Extended wrapped facets.
 
@@ -92,8 +93,11 @@ class facet_wrap2(facet_wrap):
     def compute_layout(
         self,
         data: list[pd.DataFrame],
+        scales: Scales,
     ) -> pd.DataFrame:
-        layout = super().compute_layout(data)
+        # The base class reads scales.axis_positions to decide which edge
+        # panels carry a moved axis, so it must be forwarded.
+        layout = super().compute_layout(data, scales)
 
         # Trim blank panels: remove panels that have no data
         if self.trim_blank:
@@ -173,7 +177,3 @@ class facet_wrap2(facet_wrap):
         apply_scale_facets(scales, layout, scale_facets)
 
         return scales
-
-    def set_limits_breaks_and_labels(self, panel_params, ax):
-        super().set_limits_breaks_and_labels(panel_params, ax)
-        apply_axis_guides(self, panel_params, ax)

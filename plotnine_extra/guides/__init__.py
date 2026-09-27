@@ -216,14 +216,7 @@ class guide_stringlegend(guide_legend):  # noqa: N801
         self.kind = "stringlegend"
         self.options = {"ncol": self.ncol, "nrow": self.nrow}
 
-    def setup(self, guides):  # noqa: D102
-        # plotnine < 0.16 binds guides to the plot through setup().
-        super().setup(guides)
-        self._plot = guides.plot
-
     def _bind_source(self, plot):
-        # plotnine >= 0.16 renamed the per-guide binding hook to
-        # _bind_source(plot); capture the plot reference here too.
         super()._bind_source(plot)
         self._plot = plot
 
@@ -246,12 +239,8 @@ class guide_stringlegend(guide_legend):  # noqa: N801
 
         colour_values = _legend_layer_text_colours(self)
         text = elements.text
-        if hasattr(text, "has"):
-            # plotnine >= 0.16: per-label horizontal/vertical alignments
-            alignments = list(zip(text.has, text.vas))
-        else:
-            # plotnine < 0.16: a single alignment shared by all labels
-            alignments = [(text.ha, text.va)] * len(colour_values)
+        # plotnine gives one horizontal/vertical alignment per label.
+        alignments = list(zip(text.has, text.vas))
         labels = [
             TextArea(
                 str(label),
@@ -330,14 +319,14 @@ class guide_stringlegend(guide_legend):  # noqa: N801
 
 
 def apply_axis_guides(
-    facet_obj: object,
+    plot: object,
     panel_params: "panel_view",
     ax: "Axes",
 ) -> None:
     """Apply plotnine-extra axis guide specs to a matplotlib axis."""
     callbacks = []
     for axis in ("x", "y"):
-        spec = _resolve_axis_spec(facet_obj, panel_params, axis)
+        spec = _resolve_axis_spec(plot, panel_params, axis)
         if spec is not None:
             _apply_axis_spec(ax, panel_params, axis, spec)
             callbacks.append(
@@ -349,7 +338,45 @@ def apply_axis_guides(
                 )
             )
     if callbacks:
-        _register_axis_theme_callbacks(facet_obj, callbacks)
+        _register_axis_theme_callbacks(plot, callbacks)
+
+
+class _AxisGuideCoord:
+    """
+    Mixin that applies plotnine-extra axis guides after a panel is set up.
+
+    plotnine 0.16 moved per-panel axes setup from
+    ``Facet.set_limits_breaks_and_labels`` (removed) to
+    ``coord.setup_ax(ax, panel_params, layout_info)``. The base call sets
+    limits, breaks, and labels; this runs the axis-guide specs immediately
+    afterwards so they can override them.
+    """
+
+    def setup_ax(self, ax, panel_params, layout_info) -> None:
+        super().setup_ax(ax, panel_params, layout_info)
+        apply_axis_guides(self._owner, panel_params, ax)
+
+
+def install_axis_guide_hook(plot: object) -> None:
+    """
+    Make *plot*'s coordinate system apply plotnine-extra axis guides.
+
+    Called from :meth:`plotnine_extra.facets.AxisGuideFacet.setup`, which runs
+    once per draw after every ``+`` operator has been applied -- so
+    ``plot.coordinates`` is final and its ``_owner`` is already bound.
+
+    The hook is installed by giving the coord a dynamic subclass rather than
+    by assigning a bound closure to the instance. plotnine copies the coord
+    on every ``+ coord_*()`` and on ``deepcopy(ggplot)``; an instance
+    attribute would survive that copy while still closing over the *previous*
+    coord, so the base ``setup_ax`` would run against a stale object.
+    """
+    coord = plot.coordinates
+    if isinstance(coord, _AxisGuideCoord):
+        return
+    coord.__class__ = type(
+        "_PlotnineExtraAxisGuideCoord", (_AxisGuideCoord, type(coord)), {}
+    )
 
 
 class GuideElementsStringLegend(GuideElementsLegend):
@@ -361,10 +388,9 @@ class GuideElementsStringLegend(GuideElementsLegend):
 
 
 def _register_axis_theme_callbacks(
-    facet_obj: object,
+    plot: object,
     callbacks: list[tuple["Axes", "panel_view", str, GuideAxisSpec]],
 ) -> None:
-    plot = getattr(facet_obj, "plot", None)
     if plot is None:
         return
 
@@ -419,7 +445,7 @@ def _register_stringlegend_theme_callback(
 
 
 def _resolve_axis_spec(
-    facet_obj: object,
+    plot: object,
     panel_params: "panel_view",
     axis: str,
 ) -> GuideAxisSpec | None:
@@ -428,7 +454,6 @@ def _resolve_axis_spec(
     if isinstance(spec, GuideAxisSpec):
         return spec
 
-    plot = getattr(facet_obj, "plot", None)
     fallback = getattr(plot, "_plotnine_extra_axis_guides", {})
     spec = fallback.get(axis)
     return spec if isinstance(spec, GuideAxisSpec) else None

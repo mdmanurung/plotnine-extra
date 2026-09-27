@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, Literal
 
 from plotnine.facets.facet_grid import facet_grid
 
-from ..guides import apply_axis_guides
+from ._axis_guides import AxisGuideFacet
 from .scale_facet import apply_scale_facets
 
 if TYPE_CHECKING:
@@ -16,10 +16,11 @@ if TYPE_CHECKING:
 
     import pandas as pd
     from plotnine.scales.scale import scale
+    from plotnine.scales.scales import Scales
     from plotnine.typing import FacetSpaceRatios
 
 
-class facet_grid2(facet_grid):
+class facet_grid2(AxisGuideFacet, facet_grid):
     """
     Extended grid facets with independent scales.
 
@@ -99,8 +100,12 @@ class facet_grid2(facet_grid):
     def compute_layout(
         self,
         data: list[pd.DataFrame],
+        scales: Scales,
     ) -> pd.DataFrame:
-        layout = super().compute_layout(data)
+        # `scales` is plotnine's Scales object, not the `scales` free-scales
+        # string held on self. The base class reads scales.axis_positions to
+        # decide which edge panels carry a moved axis, so it must be forwarded.
+        layout = super().compute_layout(data, scales)
 
         # Independent scales: give each panel its own scale index
         # so that plotnine creates separate scale objects per panel.
@@ -165,7 +170,3 @@ class facet_grid2(facet_grid):
         apply_scale_facets(scales, layout, scale_facets)
 
         return scales
-
-    def set_limits_breaks_and_labels(self, panel_params, ax):
-        super().set_limits_breaks_and_labels(panel_params, ax)
-        apply_axis_guides(self, panel_params, ax)
