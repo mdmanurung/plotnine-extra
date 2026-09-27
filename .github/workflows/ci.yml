@@ -2,7 +2,10 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    # Run on every branch, not just main. Previously this watched `main` and
+    # pull requests only, so work pushed to a feature branch that was not yet
+    # a PR received no CI at all.
+    branches: ["**"]
     tags:
       - "v*"
   pull_request:
@@ -30,7 +33,8 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.10", "3.11", "3.12", "3.13"]
+        # 3.11 is the floor: plotnine 0.16 requires Python >= 3.11.
+        python-version: ["3.11", "3.12", "3.13"]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -42,9 +46,57 @@ jobs:
       - name: Run tests with coverage
         run: |
           python -m pytest tests/ -v \
+            --ignore=tests/test_benchmarks.py \
             --cov=plotnine_extra \
             --cov-report=term-missing \
             --cov-fail-under=50
+
+  benchmarks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: |
+          pip install -e ".[test]"
+      - name: Record timings for the plotting hot paths
+        run: |
+          python -m pytest tests/test_benchmarks.py -v \
+            --benchmark-only \
+            --benchmark-columns=min,mean,ops \
+            --benchmark-sort=name \
+            --benchmark-json-output=bench.json
+      - name: Show timings
+        run: python -c "import json; d=json.load(open('bench.json')); \
+          [print(f'{b[\"name\"]:<50} {b[\"stats\"][\"min\"]*1000:9.3f} ms') \
+           for b in d['benchmarks']]"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-timings
+          path: bench.json
+
+  prerelease:
+    # We depend on a plotnine alpha (there is no stable 0.16 yet), so keep an
+    # early-warning lane on the newest pre-release. It is non-blocking: the
+    # stable lane above is what gates a merge.
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install the package, then bump plotnine to the newest alpha
+        run: |
+          pip install -e ".[test]"
+          pip install --pre --upgrade "plotnine>=0.16.0a14"
+      - name: Show resolved plotnine
+        run: python -c "import plotnine; print('plotnine', plotnine.__version__)"
+      - name: Run tests
+        run: |
+          python -m pytest tests/ -v --ignore=tests/test_benchmarks.py
 
   notebooks:
     runs-on: ubuntu-latest
