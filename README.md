@@ -8,7 +8,19 @@ Extension package for [plotnine](https://github.com/has2k1/plotnine) that adds e
 pip install plotnine-extra
 ```
 
-This also installs `plotnine` as a dependency.
+### Requirements
+
+`plotnine-extra` requires **plotnine 0.16** and **Python 3.11+**.
+
+There is no stable plotnine 0.16 on PyPI yet — the latest stable is 0.15.8 and
+0.16 exists only as alphas. The dependency is therefore pinned as
+`plotnine>=0.16.0a14`, which lets `pip` install the pre-release without a
+`--pre` flag. In other words: **installing this package puts you on a plotnine
+alpha.** That is a deliberate trade for the composition, coordinate, contour
+and secondary-axis features it unlocks; if you would rather stay on stable
+plotnine, use plotnine directly.
+
+This also installs `plotnine` itself as a dependency.
 
 ## Claude Code Skill
 
@@ -100,10 +112,8 @@ Plot composition is provided by plotnine itself; `plotnine_extra` re-exports it
 so these names are importable from one place. The composing operators come from
 plotnine's own `ggplot`, so they never conflict with the composition objects.
 
-> **Requires plotnine ≥ 0.16** for `plot_layout`, `plot_annotation`, and `Wrap`
-> (the `+` grid operator). On older plotnine, `Compose`/`Beside`/`Stack` and the
-> `|` `/` `-` operators still work; the layout/annotation extras raise a clear
-> "requires plotnine>=0.16" error until you upgrade.
+All of it is available: plotnine 0.16 is this package's minimum, so there is no
+version gating to work around.
 
 Compose multiple plots using operators:
 
@@ -141,6 +151,8 @@ Additional composition classes and functions:
 - **`plot_layout`**: Customise composition layout (nrow, ncol, widths, heights)
 - **`plot_annotation`**: Add title, subtitle, caption, footer to compositions
 - **`plot_spacer`**: Add blank space in compositions
+- **`guide_area`**: Reserve space in a composition for a guide
+- **`inset_element`**: Place an inset axes inside a composition
 
 ### Animation
 
@@ -157,16 +169,28 @@ ani = PlotnineAnimation(plots, interval=200)
 ani.save("animation.gif")
 ```
 
+### Inherited from plotnine 0.16
+
+Because the package re-exports plotnine's whole public API, everything plotnine
+0.16 added is available from `plotnine_extra` too, with no code of our own:
+
+- **Coordinates**: `coord_polar`, `coord_radial`
+- **Secondary axes**: `sec_axis`, `dup_axis`
+- **Contours**: `geom_contour`, `geom_contour_filled`, `geom_density_2d_filled`,
+  `stat_contour`, `stat_contour_filled`, `stat_density_2d_filled`
+- **Literal aesthetic values**: `I(...)`
+
 ## Compatibility
 
-- Requires Python ≥ 3.10
-- Requires plotnine ≥ 0.15.3 and < 0.17
-- Plot composition layout/annotation extras require plotnine ≥ 0.16 (see above)
+- Requires Python ≥ 3.11
+- Requires plotnine ≥ 0.16.0a14 (there is no stable 0.16 yet; see
+  [Requirements](#requirements))
 
-> **Note:** Composition delegates to plotnine's native composition, so it tracks
-> upstream automatically. The animation module and some stat/guide/facet helpers
-> still use plotnine's internal APIs and may need adjustment across plotnine
-> releases — see [`UPSTREAM_SYNC.md`](UPSTREAM_SYNC.md) for how syncing works.
+> **Note:** Composition and animation delegate to plotnine's own implementations,
+> so they track upstream automatically. Some stat/guide/facet helpers still use
+> plotnine's internal APIs and need adjustment across plotnine releases — see
+> [`UPSTREAM_SYNC.md`](UPSTREAM_SYNC.md) for the current list and how syncing
+> works.
 
 ## Development
 

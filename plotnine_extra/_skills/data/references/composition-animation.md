@@ -1,12 +1,15 @@
 # Composition and Animation
 
 Composition is provided by plotnine natively; `plotnine_extra` re-exports it.
-The `Beside`/`Stack`/`Compose`/`plot_spacer` objects and the `|` `/` `-`
-operators work on any supported plotnine (≥0.15.3). **`plot_layout`,
-`plot_annotation`, `Wrap` (the `+` grid operator), and the `ggarrange`/
-`annotate_figure` helpers require plotnine ≥0.16** — on older plotnine they
-raise a clear "requires plotnine>=0.16" error. plotnine 0.16 is currently a
-pre-release (`pip install --pre "plotnine>=0.16"`).
+`plotnine-extra` **requires plotnine 0.16**, so every composition object is
+always available — `Compose`, `Beside`, `Stack`, `Wrap`, `plot_spacer`,
+`plot_layout`, `plot_annotation`, and the `|` `/` `-` `+` `&` `*` operators.
+There is no version gating to work around. 0.16 is still a pre-release on PyPI
+(the dependency is pinned `plotnine>=0.16.0a14`, which installs without
+`--pre`); also re-exported are `guide_area` and `inset_element`.
+
+Animation is likewise re-exported from plotnine (`PlotnineAnimation`), so both
+track plotnine's own internals automatically.
 
 `plotnine-extra` lets users combine plotnine plots with operators:
 

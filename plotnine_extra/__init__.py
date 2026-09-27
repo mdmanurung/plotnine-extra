@@ -55,6 +55,7 @@ Composition:
     - plot_layout: Customise composition layout
     - plot_annotation: Annotate compositions
     - plot_spacer: Blank space in compositions
+    - guide_area, inset_element: Place guides/insets within a composition
 
 Animation:
     - PlotnineAnimation: Create animations from ggplot objects
@@ -63,29 +64,18 @@ Datasets (via ``plotnine_extra.data``):
     - ToothGrowth: Tooth growth in guinea pigs (ggpubr example data)
 """
 
-import warnings as _warnings
-
 from plotnine import *  # noqa: F401, F403
 from plotnine import __all__ as _plotnine_all
-from plotnine import __version__ as _plotnine_version
-
-# Warn if plotnine version is untested
-_tested_plotnine = ("0.15", "0.16")
-if not any(_plotnine_version.startswith(v) for v in _tested_plotnine):
-    _warnings.warn(
-        f"plotnine-extra has been tested with plotnine "
-        f"0.15.x-0.16.x but you have "
-        f"{_plotnine_version}."
-        f" Some features may not work correctly.",
-        stacklevel=2,
-    )
+from plotnine import guides as _plotnine_guides
 
 from .animation import PlotnineAnimation  # noqa: E402
-from .composition import (
+from .composition import (  # noqa: E402
     Beside,
     Compose,
     Stack,
     Wrap,
+    guide_area,
+    inset_element,
     plot_annotation,
     plot_layout,
     plot_spacer,
@@ -148,6 +138,22 @@ from .guides import (
     guide_dendro,
     guide_stringlegend,
 )
+
+# Importing from the `.guides` subpackage above binds the *module*
+# `plotnine_extra.guides` into this namespace, shadowing plotnine's `guides`
+# class. Because "guides" is in `plotnine.__all__` -- and therefore in ours --
+# `from plotnine_extra import *` would re-export that module, so a call like
+# `guides(color="none")` raised `TypeError: 'module' object is not callable`,
+# breaking the usage the README documents as the primary entry point.
+#
+# Re-bind the name to plotnine's class. This mirrors plotnine itself, where
+# `plotnine.guides` is likewise the class and the subpackage lives on in
+# `sys.modules` (so `from plotnine_extra.guides import ...` still works).
+#
+# Note: deleting the name instead is NOT a fix -- "guides" is in `__all__`, so
+# `from plotnine_extra import *` would then fail with AttributeError.
+guides = _plotnine_guides
+
 from .palettes import *  # noqa: F401, F403, E402
 from .palettes import __all__ as _palettes_all
 from .palettes import (
@@ -427,6 +433,8 @@ _extra_all = (
     "Beside",
     "Stack",
     "Wrap",
+    "guide_area",
+    "inset_element",
     "plot_annotation",
     "plot_layout",
     "plot_spacer",

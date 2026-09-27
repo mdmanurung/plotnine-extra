@@ -4,9 +4,26 @@ Installation
 Requirements
 ------------
 
-* Python ≥ 3.10
-* plotnine ≥ 0.15.3
-* scipy ≥ 1.10.0
+* Python ≥ 3.11
+* plotnine ≥ 0.16.0a14
+* scipy ≥ 1.15.0
+* numpy ≥ 1.25.0
+* pandas ≥ 2.2.0
+* matplotlib ≥ 3.10.0
+
+.. note::
+
+   plotnine 0.16 has no stable release yet — the latest stable is 0.15.8, and
+   0.16 exists only as alphas. The dependency is therefore specified as
+   ``plotnine>=0.16.0a14`` rather than ``plotnine>=0.16``: the latter is
+   unsatisfiable, because no such release exists. PEP 440 permits a
+   pre-release whenever the specifier itself names one, so the pinned form
+   installs with a plain ``pip install`` and no ``--pre`` flag.
+
+   In short: **installing plotnine-extra puts you on a plotnine alpha.** That
+   is a deliberate trade for the composition, coordinate, contour and
+   secondary-axis features it makes available. If you would rather stay on
+   stable plotnine, use plotnine directly.
 
 Install from PyPI
 -----------------
@@ -17,8 +34,8 @@ The recommended way to install **plotnine-extra** is from PyPI:
 
    pip install plotnine-extra
 
-This will also pull in the required dependencies (``plotnine`` and
-``scipy``).
+This will also pull in the required dependencies (``plotnine``, ``scipy``,
+``numpy``, ``pandas``, and ``matplotlib``).
 
 Claude Code and Codex skills
 ----------------------------

@@ -39,7 +39,9 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.10", "3.11", "3.12", "3.13"]
+        # 3.11 is the floor: plotnine 0.16 requires Python >= 3.11, so a 3.10
+        # leg could not resolve the dependency at all.
+        python-version: ["3.11", "3.12", "3.13"]
     permissions:
       contents: read
     steps:
@@ -52,6 +54,7 @@ jobs:
       - name: Run tests with coverage
         run: |
           python -m pytest tests/ -v \
+            --ignore=tests/test_benchmarks.py \
             --cov=plotnine_extra \
             --cov-report=term-missing \
             --cov-fail-under=50

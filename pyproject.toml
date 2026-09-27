@@ -15,7 +15,6 @@ classifiers = [
     "Operating System :: Unix",
     "Operating System :: MacOS",
     "Programming Language :: Python :: 3 :: Only",
-    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
@@ -23,10 +22,26 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Visualization"
 ]
 dependencies = [
-    "plotnine>=0.15.3,<0.17",
-    "scipy>=1.10.0",
+    # plotnine 0.16 has no stable release yet -- PyPI's latest stable is
+    # 0.15.8, and 0.16 exists only as alphas. A plain `plotnine>=0.16` is
+    # therefore UNSATISFIABLE ("No solution found"); PEP 440 only permits
+    # pre-releases when the specifier itself names one, which is what
+    # `>=0.16.0a14` does. That makes `pip install plotnine-extra` work with no
+    # `--pre` flag. Raise this floor as soon as 0.16.0 ships stable.
+    "plotnine>=0.16.0a14",
+    "scipy>=1.15.0",
+    # Imported directly across the package (numpy in 48 modules, pandas in 53,
+    # matplotlib in 16), so they are declared rather than left to arrive
+    # transitively via plotnine. The floors match plotnine 0.16's own, so
+    # this records the real dependency surface without narrowing what pip can
+    # resolve. matplotlib in particular is load-bearing: the image baselines
+    # are pixel-exact, so a matplotlib minor bump re-diffs all of them. The
+    # `test` extra therefore caps matplotlib -- see the note there.
+    "matplotlib>=3.10.0",
+    "numpy>=1.25.0",
+    "pandas>=2.2.0",
 ]
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 
 [project.scripts]
 plotnine-extra-install-skills = "plotnine_extra._skills.install:main"
@@ -44,7 +59,15 @@ lint = [
 ]
 
 test = [
-    "pytest-cov>=4.0.0"
+    # pytest itself was missing: `pip install -e ".[test]"` installed no test
+    # runner, and CI only worked because the GitHub runner image ships one.
+    "pytest>=7.0.0",
+    "pytest-benchmark>=4.0.0",
+    "pytest-cov>=4.0.0",
+    # The image baselines are pixel-exact, so a matplotlib minor bump silently
+    # re-diffs all 44 of them. Cap the range to keep renders reproducible;
+    # widen deliberately, alongside a baseline regeneration, when upgrading.
+    "matplotlib>=3.10.0,<3.12",
 ]
 
 build = [

@@ -37,7 +37,15 @@ library code, import the specific object from `plotnine_extra`.
 
 ## Package Rules
 
-- Requires Python >= 3.10 and plotnine >= 0.15.3,<0.17.
+- Requires Python >= 3.11 and plotnine >= 0.16.0a14. plotnine 0.16 is still
+  an alpha with no stable release, so the pin names a pre-release on purpose;
+  a plain `pip install` resolves it without `--pre`. Do not suggest
+  `plotnine>=0.16`, which is unsatisfiable.
+- `plotnine_extra` re-exports plotnine's entire public API, so plotnine 0.16
+  features are importable from it directly: `coord_polar`, `coord_radial`,
+  `sec_axis`, `dup_axis`, `geom_contour`, `geom_contour_filled`,
+  `geom_density_2d_filled`, `stat_contour`, `stat_contour_filled`,
+  `stat_density_2d_filled`, and `I(...)`.
 - Axis guide helpers are Matplotlib-backed. Use them through
   `scale_x_continuous(..., guide=...)`, `scale_y_*`, or add a guide object to
   plots that use the extended facets.
