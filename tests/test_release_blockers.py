@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import sys
+
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
@@ -43,6 +45,11 @@ from plotnine_extra.facets import (
     facet_wrap2,
     scale_x_facet,
     scale_y_facet,
+)
+from plotnine_extra.positions._beeswarm_algorithms import (
+    corral_points,
+    offset_beeswarm,
+    offset_quasirandom,
 )
 from plotnine_extra.stats import _common
 
@@ -753,3 +760,202 @@ def test_strip_classes_are_exported_and_fail_clearly_for_unsupported_draw():
 
     with pytest.raises(NotImplementedError, match="strip_split"):
         pe.strip_split().draw({})
+
+
+def test_star_import_exports_plotnine_guides_not_the_submodule():
+    """`from plotnine_extra import *` must export plotnine's ``guides`` class.
+
+    Importing from the ``plotnine_extra.guides`` subpackage binds that *module*
+    into the package namespace, shadowing plotnine's ``guides`` class. Since
+    "guides" is in ``plotnine.__all__`` (and so in ours), a star-import used to
+    re-export the module, making ``guides(...)`` raise
+    ``TypeError: 'module' object is not callable`` -- breaking the usage the
+    README documents as the primary entry point.
+    """
+    namespace: dict[str, object] = {}
+    exec("from plotnine_extra import *", namespace)
+
+    exported = namespace["guides"]
+    assert exported is guides, (
+        "star-import must export plotnine's guides class, not the submodule"
+    )
+    assert callable(exported)
+
+
+def test_star_imported_guides_is_usable_on_a_plot():
+    namespace: dict[str, object] = {}
+    exec("from plotnine_extra import *", namespace)
+
+    data = pd.DataFrame({"x": [1, 2, 3], "y": [3, 2, 1], "g": ["a", "b", "c"]})
+    plot = (
+        ggplot(data, aes("x", "y", color="g"))
+        + geom_point()
+        + namespace["guides"](color="none")
+    )
+    plot._build()
+
+
+def test_guides_subpackage_contents_remain_importable():
+    """Re-binding must not make the subpackage's contents unreachable.
+
+    ``plotnine_extra.guides`` now resolves to plotnine's ``guides`` class, as
+    it does in plotnine itself. The subpackage stays in ``sys.modules``, so a
+    ``from plotnine_extra.guides import ...`` still works.
+    """
+    namespace: dict[str, object] = {}
+    exec(
+        "from plotnine_extra.guides import guide_axis_manual as g",
+        namespace,
+    )
+
+    assert namespace["g"] is guide_axis_manual
+    assert sys.modules["plotnine_extra.guides"].guide_axis_manual is (
+        guide_axis_manual
+    )
+
+
+# --- Reproducibility of the opt-in random beeswarm paths -------------------
+#
+# The defaults (method="quasirandom"/"swarm", priority="ascending",
+# corral="none") are deterministic. The three random options below drew from
+# an unseeded generator, so a figure using them rendered differently on
+# every draw with no way for the caller to pin it.
+#
+# The parameter is named ``random_state`` and typed with plotnine's public
+# ``RandomStateLike`` (an int seed, or a RandomState/Generator), matching
+# ``position_jitter``. An int becomes a ``RandomState``; the seed is resolved
+# to a generator once per panel in ``setup_params`` so that the swarm priority
+# and the corral advance a single stream rather than two identical ones.
+
+
+def _dense_values() -> np.ndarray:
+    return np.random.default_rng(0).normal(0.0, 1.0, 400)
+
+
+def _tied_panel() -> pd.DataFrame:
+    """A single-group panel with tied y-values, so points actually collide.
+
+    ``setup_params`` derives ``point_size`` from ``resolution(y)``; continuous
+    noise would give a point_size too small for any overlap and therefore no
+    swarm spread at all.
+    """
+    rng = np.random.default_rng(1)
+    return pd.DataFrame(
+        {
+            "x": [1.0] * 80,
+            "y": rng.integers(0, 8, size=80).astype(float),
+            "group": [1] * 80,
+        }
+    )
+
+
+def test_quasirandom_pseudorandom_is_reproducible_with_a_seed():
+    values = _dense_values()
+    first = offset_quasirandom(values, method="pseudorandom", random_state=7)
+    second = offset_quasirandom(values, method="pseudorandom", random_state=7)
+
+    assert np.allclose(first, second)
+    other = offset_quasirandom(values, method="pseudorandom", random_state=8)
+    assert not np.allclose(first, other)
+
+
+def test_beeswarm_random_priority_is_reproducible_with_a_seed():
+    values = _dense_values()
+    first = offset_beeswarm(values, priority="random", random_state=7)
+    second = offset_beeswarm(values, priority="random", random_state=7)
+
+    assert np.allclose(first, second)
+
+
+def test_random_state_accepts_a_generator_not_just_an_int():
+    """plotnine's RandomStateLike also allows passing a generator."""
+    values = _dense_values()
+
+    from_int = offset_beeswarm(values, priority="random", random_state=7)
+    from_gen = offset_beeswarm(
+        values,
+        priority="random",
+        random_state=np.random.default_rng(7),
+    )
+
+    # Both are reproducible in their own right...
+    assert np.allclose(
+        from_gen,
+        offset_beeswarm(
+            values,
+            priority="random",
+            random_state=np.random.default_rng(7),
+        ),
+    )
+    # ...but a Generator is a different stream from an int seed, so the two
+    # must not be expected to agree.
+    assert not np.allclose(from_int, from_gen)
+
+
+def test_corral_random_is_reproducible_with_a_seed():
+    offsets = offset_beeswarm(_dense_values())
+    # Corral far narrower than the swarm, so points really are out of bounds.
+    narrow = 0.05
+    assert (np.abs(offsets) > narrow / 2).any()
+
+    first = corral_points(
+        offsets, method="random", width=narrow, random_state=7
+    )
+    second = corral_points(
+        offsets, method="random", width=narrow, random_state=7
+    )
+
+    assert np.allclose(first, second)
+
+
+def test_position_classes_accept_and_store_a_random_state():
+    assert position_quasirandom(random_state=7).params["random_state"] == 7
+    assert position_beeswarm(random_state=7).params["random_state"] == 7
+    # Unseeded remains the default, preserving existing behaviour.
+    assert position_quasirandom().params["random_state"] is None
+    assert position_beeswarm().params["random_state"] is None
+
+
+def test_setup_params_resolves_the_seed_once_per_panel():
+    """Two random paths must not each restart from the same integer seed.
+
+    ``priority="random"`` and ``corral="random"`` both draw. If each resolved
+    the integer independently they would get two generators seeded
+    identically, and the swarm order would correlate with the corral jitter.
+    Resolving once in ``setup_params`` means a single stream advances through
+    both.
+    """
+    pos = position_beeswarm(priority="random", corral="random", random_state=3)
+    params = pos.setup_params(_tied_panel())
+
+    resolved = params["random_state"]
+    assert not isinstance(resolved, int)
+    # A generator object, not a fresh re-resolution of the integer.
+    assert pos.setup_params(_tied_panel())["random_state"] is not resolved
+
+
+def test_seeded_position_beeswarm_panel_is_reproducible():
+    """End-to-end through the position class, not just the algorithms.
+
+    Exercises both random paths at once (``priority`` and ``corral``) via
+    ``compute_panel``, which is where a plot actually picks up the offsets.
+    """
+    data = _tied_panel()
+
+    def run(seed: int) -> np.ndarray:
+        pos = position_beeswarm(
+            priority="random",
+            corral="random",
+            corral_width=0.05,
+            random_state=seed,
+        )
+        params = pos.setup_params(data)
+        panel = position_beeswarm.compute_panel(data.copy(), None, params)
+        return panel["x"].to_numpy()
+
+    first, second, other = run(11), run(11), run(12)
+
+    # Guard against a vacuous test: the position must actually move points.
+    assert first.max() - first.min() > 0.0
+    assert np.allclose(first, second)
+    assert not np.allclose(first, other)
