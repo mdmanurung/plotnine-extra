@@ -1,8 +1,10 @@
 # Codebase Evaluation and Feature Notes for plotnine-extra
 
-Historical note: this document is an April 2026 planning snapshot. It is kept
-for background and should not be read as the current release assessment. Use
-the API reference, vignettes, and test suite for current behaviour.
+Historical note: the body of this document is an April 2026 planning snapshot,
+kept for background. The **Test & Quality Metrics** table and **Part 5
+(Performance)** are current as of the plotnine 0.16 sync; the rest should not be
+read as the current release assessment. Use the API reference, vignettes, and
+test suite for current behaviour.
 
 ## Context
 
@@ -284,10 +286,80 @@ The following previously proposed features have been completed:
 
 ### Test & Quality Metrics
 
-| Metric | Current | Target |
-|--------|---------|--------|
-| Test cases | 331 (297 pass, 34 skip) | 400+ |
-| Overall coverage | 68.4% | 80%+ |
-| CI coverage threshold | 50% | 70% |
-| Vignettes | 3 | 8+ |
-| Test files | 13 | 15+ |
+Refreshed after the plotnine 0.16 sync. The numbers in the April 2026 body of
+this document are superseded by the table below.
+
+| Metric | Current | Previous snapshot |
+|--------|---------|-------------------|
+| Test cases | 595 passing, 0 skipped | 331 (297 pass, 34 skip) |
+| Test functions | 583 | 331 |
+| Test files | 26 | 13 |
+| Overall coverage | 79.9% | 68.4% |
+| CI coverage threshold | 50% | 50% |
+| CI Python matrix | 3.11, 3.12, 3.13 | 3.10 - 3.13 |
+| Vignettes | 7 | 3 |
+| Package size | ~16,800 lines | ~9,600 lines |
+
+## Part 5: Performance
+
+This section did not exist in the previous evaluation, which rated
+"Dependencies: A" on the strength of having only two core dependencies and
+never measured anything. There was no benchmark suite, no profiling script, and
+no timing code anywhere in the repository; `.benchmarks/` was an empty,
+untracked directory and the `benchmarks` entry in `.gitignore` was inherited
+verbatim from plotnine.
+
+Nothing was slow *visibly* because **no test in the suite drew more than
+n=100 points**, which is small enough that every quadratic path in the package
+looks instantaneous. The costs were found by reading the implementations.
+
+### Fixed
+
+| Path | Problem | Complexity | Result |
+| --- | --- | --- | --- |
+| `geoms/geom_text_repel.py` | Triple-nested Python loop (`max_iter` x labels x labels), with `np.sqrt` on NumPy scalars in the innermost body | Theta(1000 * n^2) Python iterations | KD-tree neighbour search + vectorised force accumulation. **41x at n=40, 177x at n=200**; n=1500 dropped from minutes to ~3s |
+| `geoms/geom_polygonraster.py` | `data.iloc[[i]].to_dict("records")[0]` per raster cell, then 4 dict copies, then a DataFrame built from 4n dicts | Linear, ~30-60 us per cell | Broadcast the shared columns. **33.3s -> 19.5ms (1700x) at n=50,000**, identical output |
+| `positions/_beeswarm_algorithms.py` `_swarm` | `np.append` inside the placement loop reallocated and copied both buffers on every one of the n iterations | Theta(n^2) time *and* Theta(n^2) allocation traffic | Preallocated buffers with a write cursor |
+| `positions/_beeswarm_algorithms.py` `_swarm_place` / `_compact_place` | 2k+1 candidates, each tested in its own NumPy call against all k neighbours | Theta(n^3) worst case | One broadcast (candidates x neighbours) comparison. **4-22x on tied data**, bit-identical output |
+| `positions/_beeswarm_algorithms.py` `_kde_density` | `gaussian_kde` evaluated at every observation, materialising an n x n kernel matrix | Theta(n^2) time and peak memory, per group | Evaluate on a grid growing like sqrt(n), then interpolate. **8x at n=10,000**, max error < 1e-4 |
+| `stats/_common.py` `paired_values_by_wid` | A full `pivot_table` plus a full-frame `isin` copy re-done once per comparison pair | Theta(C * n * pivot) | Pivot once, index per pair. **~10x for 28 pairs over 32,000 rows**, identical results |
+| `stats/stat_compare.py` (`overall=True`) | `data.copy()` -- a full deep copy -- inside the per-level loop | Theta(G * n) deep copies | Group once and slice |
+| `stats/stat_compare.py` (pairwise) | `data["x"] == a` mask rebuilt per comparison, each group re-extracted once per pair | Theta(C * n) | Group once |
+| `stats/stat_compare.py` `_run_test` | `d["y"].dropna()` evaluated twice per group | Theta(2n) | Materialise once |
+| `geoms/geom_textbox.py`, `geom_richtext.py` | `data.iloc[i]` built a whole pandas Series per label | Linear, large constant | Pre-extract the columns once |
+
+The beeswarm, `stat_compare`, and `geom_polygonraster` changes are all verified
+**bit-identical** to the previous output. The repulsion rewrite is the one place
+where output legitimately differs: it converges to a different local optimum,
+resolving slightly fewer label collisions at n=40 (18 vs 12 of 73) and
+noticeably more at n >= 200.
+
+### Infrastructure added
+
+- `pytest-benchmark` in the `test` extra, and `tests/test_benchmarks.py`: 41
+  benchmarks over the paths above, at n = 100 / 1,000 / 10,000 (repulsion uses
+  100 / 500 / 1,000, since it is seconds per call).
+  ```bash
+  pytest tests/test_benchmarks.py --benchmark-only
+  ```
+  CI runs these into a `bench.json` artifact.
+- `tests/test_performance_paths.py`: 22 correctness tests pinning the optimised
+  paths, since a fast wrong answer is worse than a slow right one. It also pins
+  the error behaviour of the paired-test pivot (incomplete pairs, duplicate
+  subjects), which the pivot hoist could plausibly have changed.
+- Matplotlib is now capped at `>=3.10,<3.12` in the `test` extra. The image
+  baselines are pixel-exact, so an unpinned matplotlib silently re-diffs all 44
+  of them. This replaces the old `-mpl311` filename-suffix scheme, which existed
+  only to span two matplotlib versions at once.
+- The benchmark suite is excluded from the main CI lane (`--ignore=
+  tests/test_benchmarks.py`) so calibration cannot make the gating job flaky.
+
+### Still slow, deliberately
+
+- `_repel_labels` remains superlinear in the number of labels: a KD-tree bounds
+  each query to a neighbourhood, but with many labels packed into one panel the
+  neighbourhood is large, so cost still grows faster than linearly. n=3000 takes
+  ~140s. Making that faster needs a real collision-resolution scheme (e.g.
+  simulated annealing with a Barnes-Hut approximation), not a tighter loop.
+- `geom_text_repel` creates two Matplotlib artists per label, which slows
+  `savefig` and interactive redraw independently of the layout algorithm.
