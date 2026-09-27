@@ -398,16 +398,27 @@ class stat_compare(stat):
                 }
             )
         elif overall:
+            # Each level is compared against everything else. The previous
+            # form deep-copied the whole frame per level just to derive the
+            # two value arrays, so it was quadratic in the frame size; group
+            # once and slice instead.
+            y_all = data["y"]
+            x_all = data["x"]
             for xv in sorted(data["x"].unique()):
-                subset = data.copy()
-                subset["group"] = (subset["x"] == xv).astype(int)
-                res = _run_test(
-                    subset,
-                    multiple=False,
-                    parametric=parametric,
-                    method=method,
-                    method_args=method_args,
-                )
+                at_xv = y_all[x_all == xv].dropna().to_numpy(dtype=float)
+                others = y_all[x_all != xv].dropna().to_numpy(dtype=float)
+                try:
+                    # Same argument order as before: the "other" levels
+                    # first, this level second.
+                    res = _pair_test(
+                        others,
+                        at_xv,
+                        parametric=parametric,
+                        method=method,
+                        method_args=method_args,
+                    )
+                except Exception:  # noqa: BLE001
+                    res = {"p": np.nan, "method": None}
                 rows.append(
                     {
                         **res,
@@ -483,10 +494,14 @@ class stat_compare(stat):
 
         rows: list[dict[str, Any]] = []
         i = 0
+        # Group once. Re-filtering `data["x"] == a` per comparison rebuilt the
+        # mask every time and re-extracted a group once per pair it appeared
+        # in, so the cost grew with the number of comparisons.
+        grouped_y = dict(list(data.groupby("x")))
         for comp in comparisons:
             a, b = comp
-            x_a = data["y"][data["x"] == a].to_numpy(dtype=float)
-            x_b = data["y"][data["x"] == b].to_numpy(dtype=float)
+            x_a = grouped_y[a]["y"].to_numpy(dtype=float)
+            x_b = grouped_y[b]["y"].to_numpy(dtype=float)
             res = _pair_test(
                 x_a,
                 x_b,
@@ -595,11 +610,13 @@ def _run_test(
     """Run the appropriate test on a dataframe with x, y, group."""
     try:
         if multiple:
-            samples = [
-                d["y"].dropna().to_numpy(dtype=float)
-                for _, d in data.groupby("group")
-                if d["y"].dropna().size > 0
-            ]
+            # Materialise each group's values once; the previous form
+            # evaluated `dropna()` twice per group.
+            samples = []
+            for _, d in data.groupby("group"):
+                values = d["y"].dropna().to_numpy(dtype=float)
+                if values.size:
+                    samples.append(values)
             if len(samples) < 2:
                 return {"p": np.nan, "method": None}
             if method is not None:

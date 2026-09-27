@@ -47,25 +47,38 @@ class geom_polygonraster(geom_polygon):
         data["ymax"] = data["y"] + y_width * vjust
         data["_raster_group"] = np.arange(len(data))
 
-        rows = []
-        for raster_id in range(len(data)):
-            row = data.iloc[[raster_id]].to_dict("records")[0]
-            for x, y in (
-                (row["xmin"], row["ymin"]),
-                (row["xmax"], row["ymin"]),
-                (row["xmax"], row["ymax"]),
-                (row["xmin"], row["ymax"]),
-            ):
-                new_row = dict(row)
-                new_row["x"] = x
-                new_row["y"] = y
-                new_row["_raster_group"] = raster_id
-                new_row["group"] = raster_id
-                rows.append(new_row)
-
-        if not rows:
+        if not len(data):
             return data.iloc[0:0].copy()
-        return pd.DataFrame(rows).reset_index(drop=True)
+
+        # One polygon per input cell: its four corners, in order.
+        corners = np.stack(
+            [
+                data["xmin"].to_numpy(),
+                data["xmax"].to_numpy(),
+                data["xmax"].to_numpy(),
+                data["xmin"].to_numpy(),
+            ],
+            axis=1,
+        ).ravel()
+        corner_y = np.stack(
+            [
+                data["ymin"].to_numpy(),
+                data["ymin"].to_numpy(),
+                data["ymax"].to_numpy(),
+                data["ymax"].to_numpy(),
+            ],
+            axis=1,
+        ).ravel()
+        n_cells = len(data)
+        # Every corner repeats its cell's other columns, so broadcast those
+        # once instead of materialising a dict per cell.
+        rows = np.repeat(np.arange(n_cells), 4)
+        out = data.iloc[rows].reset_index(drop=True)
+        out["x"] = corners
+        out["y"] = corner_y
+        out["_raster_group"] = np.repeat(np.arange(n_cells), 4)
+        out["group"] = np.repeat(np.arange(n_cells), 4)
+        return out
 
 
 def _regular_step_width(values: pd.Series) -> float:

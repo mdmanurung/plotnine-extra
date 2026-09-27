@@ -15,6 +15,8 @@ import pandas as pd
 if TYPE_CHECKING:
     from typing import Hashable
 
+    from numpy.typing import NDArray
+
 
 def preserve_panel_columns(
     result: pd.DataFrame,
@@ -75,12 +77,9 @@ def drop_forwarded_kwarg(stat_obj, key: str) -> None:
     A ``stat`` stores the raw constructor kwargs so they can be handed to the
     geom as static aesthetics. Parameters that only control the stat (e.g.
     ``label``) must be removed so they are not passed on as literal aesthetic
-    values. Plotnine renamed this attribute from ``_kwargs`` to ``_raw_kwargs``
-    in 0.16, so look up both names.
+    values.
     """
     raw = getattr(stat_obj, "_raw_kwargs", None)
-    if raw is None:
-        raw = getattr(stat_obj, "_kwargs", None)
     if raw is not None:
         raw.pop(key, None)
 
@@ -139,6 +138,75 @@ def require_vertical_orientation(
         raise NotImplementedError(msg)
 
 
+def paired_frame_by_wid(
+    data: pd.DataFrame,
+    wid: str | None,
+    *,
+    group_col: str = "x",
+    value_col: str = "y",
+) -> tuple[pd.DataFrame, str, NDArray[np.bool_]]:
+    """
+    Pivot *data* to one row per subject, with a column per group.
+
+    Also returns the resolved ``wid`` column name and a per-row mask of
+    duplicate ``(subject, group)`` pairs, so a caller that needs many
+    pairwise comparisons can do this work once instead of per pair.
+
+    Parameters
+    ----------
+    data
+        Long-format frame with one row per observation.
+    wid
+        Name of the subject-id column, or a falsy value to reject.
+    group_col, value_col
+        The group column and the measurement column.
+    """
+    if not wid:
+        raise ValueError("paired tests require a wid column")
+    wid_col = _resolve_wid_column(data, wid)
+
+    wide = data.pivot_table(
+        index=wid_col,
+        columns=group_col,
+        values=value_col,
+        aggfunc="first",
+    )
+    duplicates = data.duplicated([wid_col, group_col]).to_numpy()
+    return wide, wid_col, duplicates
+
+
+def pair_from_wide(
+    wide: pd.DataFrame,
+    duplicates: NDArray[np.bool_],
+    data: pd.DataFrame,
+    group1: "Hashable",
+    group2: "Hashable",
+    *,
+    group_col: str = "x",
+) -> tuple[np.ndarray, np.ndarray]:
+    """
+    Extract one pair's aligned value arrays from a wide frame.
+
+    Companion to :func:`paired_frame_by_wid` for callers looping over
+    comparisons.
+    """
+    # Same check as validating the two-group subset, but reusing the mask
+    # already computed over the whole frame.
+    if duplicates[data[group_col].isin([group1, group2]).to_numpy()].any():
+        raise ValueError("duplicate subject/group pairs are not allowed")
+
+    required = [group1, group2]
+    if any(group not in wide.columns for group in required):
+        raise ValueError("paired tests require complete paired observations")
+    paired = wide.loc[:, required]
+    if paired.isna().any().any():
+        raise ValueError("paired tests require complete paired observations")
+    return (
+        paired[group1].to_numpy(dtype=float),
+        paired[group2].to_numpy(dtype=float),
+    )
+
+
 def paired_values_by_wid(
     data: pd.DataFrame,
     group1: "Hashable",
@@ -149,27 +217,11 @@ def paired_values_by_wid(
     value_col: str = "y",
 ) -> tuple[np.ndarray, np.ndarray]:
     """Return paired value arrays aligned by subject id."""
-    if not wid:
-        raise ValueError("paired tests require a wid column")
-    wid_col = _resolve_wid_column(data, wid)
-
-    subset = data[data[group_col].isin([group1, group2])]
-    _validate_no_duplicate_subject_groups(subset, wid_col, group_col)
-    wide = subset.pivot_table(
-        index=wid_col,
-        columns=group_col,
-        values=value_col,
-        aggfunc="first",
+    wide, _wid_col, duplicates = paired_frame_by_wid(
+        data, wid, group_col=group_col, value_col=value_col
     )
-    required = [group1, group2]
-    if any(group not in wide.columns for group in required):
-        raise ValueError("paired tests require complete paired observations")
-    paired = wide.loc[:, required]
-    if paired.isna().any().any():
-        raise ValueError("paired tests require complete paired observations")
-    return (
-        paired[group1].to_numpy(dtype=float),
-        paired[group2].to_numpy(dtype=float),
+    return pair_from_wide(
+        wide, duplicates, data, group1, group2, group_col=group_col
     )
 
 

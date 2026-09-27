@@ -194,17 +194,32 @@ class geom_richtext(geom_text):
         }
 
         text_color_override = params.get("text_color")
+        # Pull the per-label columns out once. `data.iloc[i]` builds a whole
+        # pandas Series per label, which dominated the loop for anything
+        # larger than a handful of labels.
+        labels_col = data["label"].to_numpy()
+        xs = data["x"].to_numpy()
+        ys = data["y"].to_numpy()
+        sizes = data["size"].to_numpy()
+        angles = data["angle"].to_numpy()
+        lineheights = data["lineheight"].to_numpy()
+        fontweights = data["fontweight"].to_numpy()
+        fontstyles = data["fontstyle"].to_numpy()
+        families = (
+            data["family"].to_numpy() if "family" in data.columns else None
+        )
+        has = data["ha"].to_numpy()
+        vas = data["va"].to_numpy()
 
         for i in range(len(data)):
-            row = data.iloc[i]
-            label = str(row["label"])
+            label = str(labels_col[i])
 
             # Parse simple markdown
             label, md_props = _parse_markdown(label)
 
             kw: dict[str, Any] = {
-                "x": row["x"],
-                "y": row["y"],
+                "x": xs[i],
+                "y": ys[i],
                 "s": label,
                 "color": (
                     text_color_override
@@ -213,20 +228,20 @@ class geom_richtext(geom_text):
                     if isinstance(color, tuple)
                     else color[i]
                 ),
-                "size": row["size"],
-                "rotation": row["angle"],
-                "linespacing": row["lineheight"],
-                "ha": row["ha"],
-                "va": row["va"],
-                "fontweight": md_props.get("fontweight", row["fontweight"]),
-                "fontstyle": md_props.get("fontstyle", row["fontstyle"]),
+                "size": sizes[i],
+                "rotation": angles[i],
+                "linespacing": lineheights[i],
+                "ha": has[i],
+                "va": vas[i],
+                "fontweight": md_props.get("fontweight", fontweights[i]),
+                "fontstyle": md_props.get("fontstyle", fontstyles[i]),
                 "zorder": zorder,
                 "clip_on": True,
                 "rasterized": params.get("raster", False),
             }
 
-            if row.get("family") is not None:
-                kw["family"] = row["family"]
+            if families is not None and families[i] is not None:
+                kw["family"] = families[i]
 
             bbox = dict(bbox_base)
             bbox["edgecolor"] = (
