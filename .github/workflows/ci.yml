@@ -69,9 +69,15 @@ jobs:
             --benchmark-sort=name \
             --benchmark-json=bench.json
       - name: Show timings
-        run: python -c "import json; d=json.load(open('bench.json')); \
-          [print(f'{b[\"name\"]:<50} {b[\"stats\"][\"min\"]*1000:9.3f} ms') \
-           for b in d['benchmarks']]"
+        run: |
+          python - <<'PY'
+          import json
+
+          with open("bench.json") as fh:
+              data = json.load(fh)
+          for b in data["benchmarks"]:
+              print(f"{b['name']:<50} {b['stats']['min'] * 1000:9.3f} ms")
+          PY
       - uses: actions/upload-artifact@v4
         with:
           name: benchmark-timings
