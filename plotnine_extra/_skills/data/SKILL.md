@@ -37,7 +37,7 @@ library code, import the specific object from `plotnine_extra`.
 
 ## Package Rules
 
-- Requires Python >= 3.11 and plotnine >= 0.16.0a14. plotnine 0.16 is still
+- Requires Python >= 3.11 and plotnine >= 0.16.0a15. plotnine 0.16 is still
   an alpha with no stable release, so the pin names a pre-release on purpose;
   a plain `pip install` resolves it without `--pre`. Do not suggest
   `plotnine>=0.16`, which is unsatisfiable.

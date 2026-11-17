@@ -26,9 +26,9 @@ dependencies = [
     # 0.15.8, and 0.16 exists only as alphas. A plain `plotnine>=0.16` is
     # therefore UNSATISFIABLE ("No solution found"); PEP 440 only permits
     # pre-releases when the specifier itself names one, which is what
-    # `>=0.16.0a14` does. That makes `pip install plotnine-extra` work with no
+    # `>=0.16.0a15` does. That makes `pip install plotnine-extra` work with no
     # `--pre` flag. Raise this floor as soon as 0.16.0 ships stable.
-    "plotnine>=0.16.0a14",
+    "plotnine>=0.16.0a15",
     "scipy>=1.15.0",
     # Imported directly across the package (numpy in 48 modules, pandas in 53,
     # matplotlib in 16), so they are declared rather than left to arrive

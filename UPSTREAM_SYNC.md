@@ -36,15 +36,15 @@ stable is 0.15.8, and 0.16 exists only as alphas. That has a direct consequence
 for the dependency specifier:
 
 ```toml
-dependencies = ["plotnine>=0.16.0a14"]
+dependencies = ["plotnine>=0.16.0a15"]
 ```
 
 Not `plotnine>=0.16`: that specifier is **unsatisfiable** (there is no such
 release), and `pip install plotnine-extra` would fail outright. PEP 440 only
 permits pre-releases when the specifier itself names one, which is what
-`>=0.16.0a14` does. So a plain `pip install` works with no `--pre` flag.
+`>=0.16.0a15` does. So a plain `pip install` works with no `--pre` flag.
 
-- **plotnine floor:** `>=0.16.0a14`
+- **plotnine floor:** `>=0.16.0a15`
 - **Python floor:** `>=3.11` (upstream bumped this in a11, via `039dc674d`).
   The CI matrix is 3.11/3.12/3.13.
 - **When 0.16.0 ships stable:** change the floor to `>=0.16`, and nothing else
@@ -71,6 +71,15 @@ between a11 and a14:
 | `Facet.compute_layout()` gained a required `scales` argument (a14; it feeds `scales.axis_positions`, the moved-axis feature) | `facet_manual`, `facet_grid2`, `facet_wrap2` overrode it as `compute_layout(self, data)` | Signature updated and `scales` forwarded to `super()`. `facet_manual` also uses `scales.axis_positions` to place the primary axes. |
 | `Facet.set_limits_breaks_and_labels()` **removed** in a12; the work moved to `coord.setup_ax(ax, panel_params, layout_info)` | 5 facet classes overrode it to run `apply_axis_guides` per panel | Axis guides now hang off a coord mixin (`guides/_AxisGuideCoord`), installed by `facets/_axis_guides.py::AxisGuideFacet.setup`. The old overrides were **silent dead code** — nothing crashed, the guides just stopped rendering. |
 | `Facet._get_panels_gridspec()` → `_make_gridspec()` | `facet_manual` defined the old name, so it was never called | Renamed. `panel_tools` no longer probes for either spelling. |
+
+a15 broke four more couplings. `at_panel` silently filtered nothing, which is
+the silent failure mode again.
+
+| What plotnine changed | Where we relied on it | How it is handled now |
+| --- | --- | --- |
+| `ggplot.build()` works on a **copy**; `_build()` stores it as `plot.built` | `at_panel` read `plot._build_objs.layout` mid-build, `get_breaks` read `plot.layout` after `_build()`, tests read `plot.layers[i].data` and `plot.facet.nrow` | `at_panel` reads `plot.layout` on the build copy. `get_breaks` uses `plot.build()`. Tests use `plot.layer_data(i)` and `plot.built`. |
+| `guide` and `guide_legend` lost `__post_init__`; `_elements_cls` became a read-only property | `guide_stringlegend` set `_elements_cls` and `kind` in `__post_init__`, which no longer ran | `@dataclass` on the subclass so `__post_init__` runs; `_elements_cls` is an overriding property. |
+| `Compose` is no longer a dataclass (`__init__(items)`) | Downstream `ggann` subclasses `Beside`/`Stack` with `@dataclass` | Fixed in ggann, not here. |
 
 The recurring lesson from that list: **two of the three breakages were silent.**
 A removed base method leaves the override as dead code, and a renamed method
@@ -148,7 +157,7 @@ git fetch upstream --tags
 ```bash
 uv venv --python 3.12 .venv-pre && source .venv-pre/bin/activate
 uv pip install -e ".[test]"
-uv pip install --pre --upgrade "plotnine>=0.16.0a14"
+uv pip install --pre --upgrade "plotnine>=0.16.0a15"
 uv pip install pytest && python -m pytest tests/ -q --ignore=tests/test_benchmarks.py
 ```
 

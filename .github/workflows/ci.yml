@@ -91,7 +91,7 @@ jobs:
       - name: Install the package, then bump plotnine to the newest alpha
         run: |
           pip install -e ".[test]"
-          pip install --pre --upgrade "plotnine>=0.16.0a14"
+          pip install --pre --upgrade "plotnine>=0.16.0a15"
       - name: Show resolved plotnine
         run: python -c "import plotnine; print('plotnine', plotnine.__version__)"
       - name: Run tests

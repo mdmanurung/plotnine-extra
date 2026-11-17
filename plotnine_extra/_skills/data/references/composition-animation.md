@@ -5,7 +5,7 @@ Composition is provided by plotnine natively; `plotnine_extra` re-exports it.
 always available — `Compose`, `Beside`, `Stack`, `Wrap`, `plot_spacer`,
 `plot_layout`, `plot_annotation`, and the `|` `/` `-` `+` `&` `*` operators.
 There is no version gating to work around. 0.16 is still a pre-release on PyPI
-(the dependency is pinned `plotnine>=0.16.0a14`, which installs without
+(the dependency is pinned `plotnine>=0.16.0a15`, which installs without
 `--pre`); also re-exported are `guide_area` and `inset_element`.
 
 Animation is likewise re-exported from plotnine (`PlotnineAnimation`), so both

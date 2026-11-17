@@ -14,7 +14,7 @@ pip install plotnine-extra
 
 There is no stable plotnine 0.16 on PyPI yet — the latest stable is 0.15.8 and
 0.16 exists only as alphas. The dependency is therefore pinned as
-`plotnine>=0.16.0a14`, which lets `pip` install the pre-release without a
+`plotnine>=0.16.0a15`, which lets `pip` install the pre-release without a
 `--pre` flag. In other words: **installing this package puts you on a plotnine
 alpha.** That is a deliberate trade for the composition, coordinate, contour
 and secondary-axis features it unlocks; if you would rather stay on stable
@@ -183,7 +183,7 @@ Because the package re-exports plotnine's whole public API, everything plotnine
 ## Compatibility
 
 - Requires Python ≥ 3.11
-- Requires plotnine ≥ 0.16.0a14 (there is no stable 0.16 yet; see
+- Requires plotnine ≥ 0.16.0a15 (there is no stable 0.16 yet; see
   [Requirements](#requirements))
 
 > **Note:** Composition and animation delegate to plotnine's own implementations,
