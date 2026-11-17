@@ -11,6 +11,12 @@ There is no version gating to work around. 0.16 is still a pre-release on PyPI
 Animation is likewise re-exported from plotnine (`PlotnineAnimation`), so both
 track plotnine's own internals automatically.
 
+Notes for plotnine 0.16.0a15:
+
+- `Compose` is no longer a dataclass.
+- `layer.data` exists only on built copies; use `plot.layer_data(i)`.
+- Panel positions are final only after the figure is drawn (for example saved).
+
 `plotnine-extra` lets users combine plotnine plots with operators:
 
 ```python

@@ -1,7 +1,8 @@
 """Canaries for the plotnine coupling that ggann and annplyr also rely on.
 
-Run these alone with ``pytest -m canary``; a nightly job runs them against the
-newest plotnine pre-release. Each one asserts an *effect*, not just that a name
+Run these alone with ``pytest -m canary``. The CI ``prerelease`` job
+(non-blocking) runs them, with the rest of the suite, against the newest
+plotnine pre-release. Each one asserts an *effect*, not just that a name
 imports, because the plotnine 0.16.0a15 breaks were silent: ``at_panel``
 filtered nothing and panel ratios were ignored, and nothing raised.
 

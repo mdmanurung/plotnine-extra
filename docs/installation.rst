@@ -5,7 +5,7 @@ Requirements
 ------------
 
 * Python ≥ 3.11
-* plotnine ≥ 0.16.0a14
+* plotnine ≥ 0.16.0a15
 * scipy ≥ 1.15.0
 * numpy ≥ 1.25.0
 * pandas ≥ 2.2.0
@@ -15,7 +15,7 @@ Requirements
 
    plotnine 0.16 has no stable release yet — the latest stable is 0.15.8, and
    0.16 exists only as alphas. The dependency is therefore specified as
-   ``plotnine>=0.16.0a14`` rather than ``plotnine>=0.16``: the latter is
+   ``plotnine>=0.16.0a15`` rather than ``plotnine>=0.16``: the latter is
    unsatisfiable, because no such release exists. PEP 440 permits a
    pre-release whenever the specifier itself names one, so the pinned form
    installs with a plain ``pip install`` and no ``--pre`` flag.
@@ -25,14 +25,15 @@ Requirements
    secondary-axis features it makes available. If you would rather stay on
    stable plotnine, use plotnine directly.
 
-Install from PyPI
------------------
+Install from GitHub
+-------------------
 
-The recommended way to install **plotnine-extra** is from PyPI:
+The current version of **plotnine-extra** is not on PyPI yet. Install it from
+GitHub:
 
 .. code-block:: bash
 
-   pip install plotnine-extra
+   pip install "plotnine-extra @ git+https://github.com/mdmanurung/plotnine-extra"
 
 This will also pull in the required dependencies (``plotnine``, ``scipy``,
 ``numpy``, ``pandas``, and ``matplotlib``).
@@ -65,13 +66,7 @@ To inspect the bundled skill path without copying files:
 Install from source
 -------------------
 
-To install the latest development version directly from GitHub:
-
-.. code-block:: bash
-
-   pip install git+https://github.com/mdmanurung/plotnine-extra.git
-
-Or clone the repository and install in editable mode:
+To work on the package, clone the repository and install in editable mode:
 
 .. code-block:: bash
 

@@ -41,6 +41,8 @@ library code, import the specific object from `plotnine_extra`.
   an alpha with no stable release, so the pin names a pre-release on purpose;
   a plain `pip install` resolves it without `--pre`. Do not suggest
   `plotnine>=0.16`, which is unsatisfiable.
+- plotnine-extra itself is not on PyPI yet. Install it from GitHub:
+  `pip install "plotnine-extra @ git+https://github.com/mdmanurung/plotnine-extra"`.
 - `plotnine_extra` re-exports plotnine's entire public API, so plotnine 0.16
   features are importable from it directly: `coord_polar`, `coord_radial`,
   `sec_axis`, `dup_axis`, `geom_contour`, `geom_contour_filled`,

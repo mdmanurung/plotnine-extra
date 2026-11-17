@@ -3,6 +3,9 @@ Composition
 
 .. currentmodule:: plotnine_extra
 
+These objects are plotnine's own (``plotnine.composition``), re-exported by
+plotnine_extra; they are not vendored.
+
 Compose
 -------
 

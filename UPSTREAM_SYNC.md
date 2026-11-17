@@ -56,6 +56,10 @@ installs the newest pre-release plotnine and runs the suite. It is
 the *next* internal break surfaces on our schedule rather than after plotnine
 releases.
 
+The `downstream` job is blocking. It clones `annplyr` and `ggann` (`main`) into
+`vendor/`, installs all three packages editable, and runs each repo's own
+pytest, so a change here cannot break them unnoticed.
+
 ## Where we are still coupled (the real sync risk)
 
 Delegation solves composition and animation, but several extension modules
@@ -72,7 +76,7 @@ between a11 and a14:
 | `Facet.set_limits_breaks_and_labels()` **removed** in a12; the work moved to `coord.setup_ax(ax, panel_params, layout_info)` | 5 facet classes overrode it to run `apply_axis_guides` per panel | Axis guides now hang off a coord mixin (`guides/_AxisGuideCoord`), installed by `facets/_axis_guides.py::AxisGuideFacet.setup`. The old overrides were **silent dead code** — nothing crashed, the guides just stopped rendering. |
 | `Facet._get_panels_gridspec()` → `_make_gridspec()` | `facet_manual` defined the old name, so it was never called | Renamed. `panel_tools` no longer probes for either spelling. |
 
-a15 broke four more couplings. `at_panel` silently filtered nothing, which is
+a15 broke three more couplings. `at_panel` silently filtered nothing, which is
 the silent failure mode again.
 
 | What plotnine changed | Where we relied on it | How it is handled now |
@@ -80,6 +84,10 @@ the silent failure mode again.
 | `ggplot.build()` works on a **copy**; `_build()` stores it as `plot.built` | `at_panel` read `plot._build_objs.layout` mid-build, `get_breaks` read `plot.layout` after `_build()`, tests read `plot.layers[i].data` and `plot.facet.nrow` | `at_panel` reads `plot.layout` on the build copy. `get_breaks` uses `plot.build()`. Tests use `plot.layer_data(i)` and `plot.built`. |
 | `guide` and `guide_legend` lost `__post_init__`; `_elements_cls` became a read-only property | `guide_stringlegend` set `_elements_cls` and `kind` in `__post_init__`, which no longer ran | `@dataclass` on the subclass so `__post_init__` runs; `_elements_cls` is an overriding property. |
 | `Compose` is no longer a dataclass (`__init__(items)`) | Downstream `ggann` subclasses `Beside`/`Stack` with `@dataclass` | Fixed in ggann, not here. |
+
+Two more a15 changes matter when you read panels. `_create_gridspec` became
+`_generate_gridspecs`, and panel positions are final only after the figure
+renders (for example at `savefig`), not after `build()`.
 
 The recurring lesson from that list: **two of the three breakages were silent.**
 A removed base method leaves the override as dead code, and a renamed method
@@ -91,17 +99,30 @@ underscore-prefixed plotnine name is a future sync break.
 
 | Module | Internal it uses |
 | --- | --- |
-| `facets/facet_manual.py` | `plotnine._utils.{join_keys, match}`, `plotnine.facets.facet.{add_missing_facets, combine_vars, eval_facet_vars}`, `plotnine.facets.strips.{Strips, strip}`, `plotnine._mpl.gridspec.p9GridSpec`, `ggplot._gridspec`, `Facet.{plot, free, environment, _make_axes}` |
+| `_compat.py` | the one module that imports private plotnine names: `p9Axes`, `p9GridSpec`, `groupby_apply`, `join_keys`, `match`, `resolution`, `to_rgba` (listed in `PRIVATE_NAMES`) |
+| `facets/facet_manual.py` | via `_compat`: `join_keys`, `match`, `p9Axes`, `p9GridSpec`; direct: `plotnine.facets.facet.{add_missing_facets, combine_vars, eval_facet_vars}`, `plotnine.facets.strips.{Strips, strip}`, `ggplot._gridspec`, `Facet.{plot, free, environment, _make_axes}` |
 | `facets/facet_nested.py`, `facet_nested_wrap.py` | subclass `plotnine.facets.strips.strip` (5-arg `__init__`), write `strip.label_info.variables` |
-| `facets/panel_tools.py` | patches `Layer.compute_aesthetics` and `Facet._make_gridspec`, reads `plot._build_objs.layout.layout` |
+| `facets/panel_tools.py` | patches `Layer.compute_aesthetics` and `Facet._make_gridspec` (via `_compat`: `p9GridSpec`), reads `plot.layout` on the build copy, uses `ggplot._gridspec` |
 | `facets/{facet_grid2, facet_wrap2}.py` | override `Facet.{compute_layout, init_scales, set_limits_breaks_and_labels}`; `facet_wrap._ncol`/`_nrow` |
 | `guides/__init__.py` | `plotnine.guides.guide_legend.{GuideElementsLegend, guide_legend._calculate_rows_and_cols, _elements_cls}`, `guide._bind_source`, `legend.elements.text.has/.vas`, `guide._layer_parameters` |
 | `stats/_common.py` | `Stat._raw_kwargs` (was `_kwargs` before 0.16) |
 | `stats/*` (20 stat subclasses) | `compute_panel(self, data, scales)` / `compute_layer(self, data, layout)` arity |
 | `stats/stat_pointdensity.py` | `plotnine.stats.density.{get_var_type, kde}` |
-| `positions/position_beeswarm.py`, `position_quasirandom.py` | `plotnine._utils.{groupby_apply, resolution}`, `Position.{setup_params, compute_panel}` |
-| `geoms/*` | `Geom.{setup_data, draw_group, draw_panel}`, `Layout.{layout, panel_params, axs}`, `Parameters.aes_params` |
+| `positions/position_beeswarm.py`, `position_quasirandom.py` | via `_compat`: `groupby_apply`, `resolution`; direct: `Position.{setup_params, compute_panel}` |
+| `geoms/*` | `Geom.{setup_data, draw_group, draw_panel}`, `Layout.{layout, panel_params, axs}`, `Parameters.aes_params`; `geom_richtext` and `geom_textbox` get `to_rgba` via `_compat` |
 | `coords/coord_axes_inside.py` | patches `plot.draw`, `coord_cartesian.__init__(expand=…)` |
+
+### Canary tests and the adapter module
+
+`plotnine_extra/_compat.py` holds every private plotnine import. `PRIVATE_NAMES`
+lists the names and why each is needed. `FACET_HOOKS` lists the facet methods we
+override (`compute_layout`, `_make_gridspec`), and `missing_facet_hooks()`
+reports any that plotnine removed.
+
+`tests/test_canary.py` checks this coupling. Run it with `pytest -m canary`.
+Each canary asserts an effect, not just that a name imports, because some a15
+breaks were silent. ggann has its own canaries and adapter. ggann and annplyr
+build on this package, and the `downstream` job runs their suites.
 
 ### Version-tolerant code
 
@@ -138,10 +159,13 @@ Fetch upstream (the `upstream` remote already points at `has2k1/plotnine`):
 git fetch upstream --tags
 ```
 
+0. **Run the canaries first.** After a plotnine bump, run `python -m pytest -m
+   canary`. If one fails, fix `plotnine_extra/_compat.py` or the code it names,
+   then add a row to the breakage table above.
 1. **See what changed.** Compare the supported version against the latest tag,
    and skim its changelog for the coupled surfaces:
    ```bash
-   git log --oneline v0.16.0a14..v0.16.0a15 -- plotnine/stats plotnine/guides \
+   git log --oneline v0.16.0aN..v0.16.0aM -- plotnine/stats plotnine/guides \
        plotnine/facets plotnine/coords plotnine/layer.py
    ```
 2. **Bump and test.** Change the floor in `pyproject.toml`, then run the suite
