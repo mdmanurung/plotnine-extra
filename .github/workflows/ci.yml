@@ -110,8 +110,8 @@ jobs:
     # Their tests are not in the wheels, so clone the repos into vendor/.
     runs-on: ubuntu-latest
     env:
-      ANNPLYR_REF: bb80d1285d41a1e0470311bb887018433c5acc80
-      GGANN_REF: fix/plotnine-0.16-compat
+      ANNPLYR_REF: main
+      GGANN_REF: main
     steps:
       - uses: actions/checkout@v4
       - uses: actions/checkout@v4
