@@ -8,7 +8,6 @@ from typing import TYPE_CHECKING, Literal
 
 import numpy as np
 import pandas as pd
-from plotnine._utils import join_keys, match
 from plotnine.facets.facet import (
     add_missing_facets,
     combine_vars,
@@ -17,6 +16,8 @@ from plotnine.facets.facet import (
 from plotnine.facets.facet_wrap import facet_wrap
 from plotnine.facets.strips import Strips, strip
 
+from plotnine_extra._compat import join_keys, match, p9Axes, p9GridSpec
+
 from ._axis_guides import AxisGuideFacet
 from .scale_facet import apply_scale_facets
 
@@ -24,7 +25,6 @@ if TYPE_CHECKING:
     from typing import Optional, Sequence, Union
 
     from matplotlib.axes import Axes
-    from plotnine._mpl.gridspec import p9GridSpec
     from plotnine.iapi import layout_details
     from plotnine.scales.scale import scale
     from plotnine.scales.scales import Scales
@@ -372,9 +372,7 @@ class facet_manual(AxisGuideFacet, facet_wrap):
         s = strip(self.vars, layout_info, self, ax, "top")
         return Strips([s])
 
-    def _make_gridspec(self) -> "p9GridSpec":
-        from plotnine._mpl.gridspec import p9GridSpec
-
+    def _make_gridspec(self) -> p9GridSpec:
         ratios = {}
         if self._panel_widths is not None:
             ratios["width_ratios"] = self._panel_widths
@@ -389,9 +387,7 @@ class facet_manual(AxisGuideFacet, facet_wrap):
             **ratios,
         )
 
-    def _make_axes(self) -> tuple["p9GridSpec", list["Axes"]]:
-        from plotnine._mpl.axes import p9Axes
-
+    def _make_axes(self) -> tuple[p9GridSpec, list["Axes"]]:
         # Unlike plotnine's own facets, panels may span several cells, so
         # each panel is placed from its own ROWSPAN/COLSPAN slice rather
         # than from a positional index into the grid.

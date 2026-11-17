@@ -13,6 +13,8 @@ from typing import TYPE_CHECKING, Any, Callable
 
 import numpy as np
 
+from plotnine_extra._compat import p9GridSpec
+
 if TYPE_CHECKING:
     from typing import Sequence
 
@@ -164,8 +166,6 @@ def _apply_panel_size_spec(
     facet._plotnine_extra_original_gridspec = original
 
     def _panels_gridspec(self):
-        from plotnine._mpl.gridspec import p9GridSpec
-
         width_ratios = _ratios_for(
             getattr(self, "_panel_widths", None),
             getattr(self, "ncol", None),

@@ -8,9 +8,10 @@ from __future__ import annotations
 import textwrap
 from typing import TYPE_CHECKING
 
-from plotnine._utils import to_rgba
 from plotnine.doctools import document
 from plotnine.geoms.geom_text import geom_text
+
+from plotnine_extra._compat import to_rgba
 
 if TYPE_CHECKING:
     from typing import Any

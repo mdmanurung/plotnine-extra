@@ -9,8 +9,9 @@ from copy import deepcopy
 from typing import TYPE_CHECKING
 
 import numpy as np
-from plotnine._utils import groupby_apply, resolution
 from plotnine.positions.position import position
+
+from plotnine_extra._compat import groupby_apply, resolution
 
 from .._common import resolve_random_state
 from ._beeswarm_algorithms import corral_points, offset_beeswarm
