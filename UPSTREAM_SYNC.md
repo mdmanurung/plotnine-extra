@@ -60,6 +60,11 @@ The `downstream` job is blocking. It clones `annplyr` and `ggann` (`main`) into
 `vendor/`, installs all three packages editable, and runs each repo's own
 pytest, so a change here cannot break them unnoticed.
 
+The `Nightly canary` workflow (`.github/workflows/canary.yml`) runs the canary
+tests of this package and of ggann `main` every night against the newest
+plotnine pre-release, so an alpha bump that breaks the coupling shows up before
+anyone pushes.
+
 ## Where we are still coupled (the real sync risk)
 
 Delegation solves composition and animation, but several extension modules

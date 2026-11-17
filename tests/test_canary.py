@@ -2,9 +2,11 @@
 
 Run these alone with ``pytest -m canary``. The CI ``prerelease`` job
 (non-blocking) runs them, with the rest of the suite, against the newest
-plotnine pre-release. Each one asserts an *effect*, not just that a name
-imports, because the plotnine 0.16.0a15 breaks were silent: ``at_panel``
-filtered nothing and panel ratios were ignored, and nothing raised.
+plotnine pre-release, and the ``Nightly canary`` workflow runs them and
+ggann's canaries every night against it. Each one asserts an *effect*, not
+just that a name imports, because the plotnine 0.16.0a15 breaks were silent:
+``at_panel`` filtered nothing and panel ratios were ignored, and nothing
+raised.
 
 When one fails after a plotnine bump, fix ``plotnine_extra/_compat.py`` or the
 code it points to, and add a row to the table in ``UPSTREAM_SYNC.md``.
