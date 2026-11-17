@@ -109,3 +109,13 @@ def test_plot_layout_ratios_reach_the_rendered_panels():
     top, bottom = (p.axs[0].get_position().height for p in fig.iter_plots())
     assert bottom / top == pytest.approx(1.5, rel=0.02)
     assert np.isfinite(top)
+
+
+def test_plot_layout_after_native_or_applies_widths():
+    # main's 178fc52cb fixed a crash here by ignoring the layout. With
+    # composition delegated to plotnine the widths must actually apply.
+    fig = (_points() | _points()) + pe.plot_layout(widths=[1.6, 1])
+    figure = fig.draw(show=False)
+    _render(figure)
+    left, right = (p.axs[0].get_position().width for p in fig.iter_plots())
+    assert left / right == pytest.approx(1.6, rel=0.02)
