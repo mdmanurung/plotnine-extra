@@ -1,0 +1,46 @@
+name: Nightly canary
+
+# plotnine 0.16 ships only as alphas, and some alpha bumps break the private
+# coupling silently. Every night, run the canary tests of this package and of
+# ggann against the newest plotnine pre-release, so a break shows up before
+# anyone pushes. The plotnine version that was tested is printed in the log.
+
+on:
+  schedule:
+    - cron: "17 3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  canary:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: mdmanurung/annplyr
+          ref: main
+          path: vendor/annplyr
+      - uses: actions/checkout@v4
+        with:
+          repository: mdmanurung/ggann
+          ref: main
+          path: vendor/ggann
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install all three, then bump plotnine to the newest alpha
+        run: |
+          pip install -e ".[test]" -e vendor/annplyr -e "vendor/ggann[test]"
+          pip install --pre --upgrade "plotnine>=0.16.0a15"
+      - name: Show resolved plotnine
+        run: python -c "import plotnine; print('plotnine', plotnine.__version__)"
+      - name: plotnine-extra canaries
+        run: python -m pytest -m canary -q
+      - name: ggann canaries
+        working-directory: vendor/ggann
+        env:
+          MPLBACKEND: Agg
+        run: python -m pytest -m canary -q
