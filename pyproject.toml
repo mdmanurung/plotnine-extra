@@ -121,6 +121,9 @@ testpaths = [
 ]
 doctest_optionflags = "ALLOW_BYTES NORMALIZE_WHITESPACE"
 addopts = "--import-mode=importlib"
+markers = [
+    "canary: fast checks of the plotnine coupling that downstream packages rely on",
+]
 
 ########## Tool - Coverage ##########
 # Coverage.py
