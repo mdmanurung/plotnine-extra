@@ -67,7 +67,7 @@ jobs:
             --benchmark-only \
             --benchmark-columns=min,mean,ops \
             --benchmark-sort=name \
-            --benchmark-json-output=bench.json
+            --benchmark-json=bench.json
       - name: Show timings
         run: python -c "import json; d=json.load(open('bench.json')); \
           [print(f'{b[\"name\"]:<50} {b[\"stats\"][\"min\"]*1000:9.3f} ms') \
