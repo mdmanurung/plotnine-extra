@@ -9,9 +9,11 @@ from copy import deepcopy
 from typing import TYPE_CHECKING
 
 import numpy as np
-from plotnine._utils import groupby_apply, resolution
 from plotnine.positions.position import position
 
+from plotnine_extra._compat import groupby_apply, resolution
+
+from .._common import resolve_random_state
 from ._beeswarm_algorithms import corral_points, offset_beeswarm
 
 _VALID_METHODS = {"swarm", "compactswarm", "center", "centre", "hex", "square"}
@@ -24,6 +26,7 @@ if TYPE_CHECKING:
 
     import pandas as pd
     from plotnine.iapi import pos_scales
+    from plotnine.typing import RandomStateLike
 
 
 class position_beeswarm(position):
@@ -63,6 +66,14 @@ class position_beeswarm(position):
         ``"gutter"``, ``"wrap"``, ``"random"``, ``"omit"``.
     corral_width :
         Width of the corral region.
+    random_state :
+        Integer seed, or a NumPy ``RandomState``/``Generator``, for the
+        random number generator.  Only has an effect when
+        ``priority="random"`` or ``corral="random"``; the defaults
+        (``"ascending"`` / ``"none"``) are deterministic.  ``None``
+        (the default) draws fresh randomness on every draw, so the
+        same plot renders differently each time -- pass an integer to
+        make a figure reproducible.
     """
 
     REQUIRED_AES = {"x", "y"}
@@ -76,6 +87,7 @@ class position_beeswarm(position):
         dodge_width: Optional[float] = None,
         corral: str = "none",
         corral_width: float = 0.9,
+        random_state: Optional[RandomStateLike] = None,
     ):
         _validate_choice("method", method, _VALID_METHODS)
         _validate_choice("priority", priority, _VALID_PRIORITIES)
@@ -89,6 +101,7 @@ class position_beeswarm(position):
             "dodge_width": dodge_width,
             "corral": corral,
             "corral_width": corral_width,
+            "random_state": random_state,
         }
 
     def setup_params(self, data: pd.DataFrame) -> dict:
@@ -96,6 +109,10 @@ class position_beeswarm(position):
         # Estimate point_size from data resolution
         y_res = resolution(data["y"])
         params["point_size"] = y_res / max(len(data) ** 0.25, 2)
+        # Resolve the seed to a generator exactly once, so that the two
+        # random paths below (priority and corral) advance one stream
+        # instead of each restarting from the same seed.
+        params["random_state"] = resolve_random_state(params["random_state"])
         return params
 
     @classmethod
@@ -109,6 +126,11 @@ class position_beeswarm(position):
         if dodge_width is not None:
             data = _dodge_groups(data, dodge_width)
 
+        # One generator, already resolved in setup_params, shared by every
+        # group and by both random paths, so the whole panel draws from a
+        # single advancing stream.
+        random_state = params["random_state"]
+
         def _swarm_group(gdf: pd.DataFrame) -> pd.DataFrame:
             gdf = gdf.copy()
             y = gdf["y"].to_numpy(dtype=np.float64)
@@ -119,11 +141,13 @@ class position_beeswarm(position):
                 side=params["side"],
                 priority=params["priority"],
                 point_size=params.get("point_size"),
+                random_state=random_state,
             )
             offsets = corral_points(
                 offsets,
                 method=params["corral"],
                 width=params["corral_width"],
+                random_state=random_state,
             )
             gdf["x"] = gdf["x"] + offsets
             return gdf

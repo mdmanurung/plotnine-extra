@@ -91,7 +91,7 @@ class TestGeomTextRepel:
         ) + geom_text_repel(
             force=2.0,
             max_iter=100,
-            seed=123,
+            random_state=123,
             direction="x",
         )
         p.draw_test()
@@ -364,14 +364,3 @@ class TestHommelPValueAdjustment:
         # Monotonically non-decreasing after sort
         for i in range(1, len(sorted_result)):
             assert sorted_result[i] >= sorted_result[i - 1]
-
-
-# ── Version compatibility check ──────────────────────
-
-
-class TestVersionCheck:
-    def test_plotnine_version_used(self):
-        """_plotnine_version import is used."""
-        import plotnine_extra
-
-        assert hasattr(plotnine_extra, "_plotnine_version")

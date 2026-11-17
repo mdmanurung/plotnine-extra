@@ -17,7 +17,9 @@ from plotnine.stats.stat import stat
 
 from ._common import (
     add_wid_mapping,
-    paired_values_by_wid,
+    drop_forwarded_kwarg,
+    pair_from_wide,
+    paired_frame_by_wid,
     preserve_panel_columns,
     require_vertical_orientation,
 )
@@ -154,11 +156,10 @@ class stat_pwc(stat):
             kwargs.pop("wid", None)
         super().__init__(mapping, data, **kwargs)
         self.params["wid"] = wid
-        # Remove 'label' from _kwargs so it is not forwarded
-        # to the geom as a static aesthetic value. The 'label'
-        # kwarg is a stat parameter controlling format (e.g.
-        # "p.signif"), not a literal label string.
-        self._kwargs.pop("label", None)
+        # 'label' is a stat parameter controlling format (e.g.
+        # "p.signif"), not a literal label string, so it must not
+        # be forwarded to the geom as a static aesthetic value.
+        drop_forwarded_kwarg(self, "label")
 
     def compute_panel(self, data, scales):
         require_vertical_orientation(data, "stat_pwc", scales)
@@ -237,16 +238,16 @@ class stat_pwc(stat):
             y_range = abs(y_max) if y_max != 0 else 1.0
 
         raw_results = []
+        # Pivot to wide form once for all pairs, not once per pair.
+        if paired:
+            wide, _wid_col, duplicates = paired_frame_by_wid(data, wid)
         for g1, g2 in pairs:
             if g1 not in grouped or g2 not in grouped:
                 continue
 
             if paired:
-                group1_vals, group2_vals = paired_values_by_wid(
-                    data,
-                    g1,
-                    g2,
-                    wid,
+                group1_vals, group2_vals = pair_from_wide(
+                    wide, duplicates, data, g1, g2
                 )
             else:
                 group1_vals = grouped[g1]["y"].to_numpy(dtype=float)

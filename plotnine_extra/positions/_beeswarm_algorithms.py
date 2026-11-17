@@ -12,8 +12,11 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
+from .._common import resolve_random_state
+
 if TYPE_CHECKING:
     from numpy.typing import NDArray
+    from plotnine.typing import RandomStateLike
 
 
 # -------------------------------------------------------------------
@@ -55,17 +58,37 @@ def _kde_density(
     Estimate density at each data point using a Gaussian KDE.
 
     Returns an array of density values the same length as *values*.
+
+    The KDE is evaluated on an evenly spaced grid of *nbins* points and then
+    interpolated back to the data. Evaluating it at every observation instead
+    would build and multiply an n-by-n kernel matrix, which is quadratic in
+    both time and peak memory; on a grid the cost is O(n * nbins).
     """
     from scipy.stats import gaussian_kde
 
-    if len(values) < 2:
+    n = len(values)
+    if n < 2:
         return np.ones_like(values)
 
     try:
         kde = gaussian_kde(values, bw_method=bandwidth)
-        density = kde(values)
     except np.linalg.LinAlgError:
-        density = np.ones_like(values)
+        return np.ones_like(values)
+
+    # How many points to evaluate on. Growing like sqrt(n) keeps the cost
+    # near-linear while staying dense enough to resolve the density.
+    n_grid = int(min(n, max(64, min(1024, np.sqrt(n) * 8))))
+    if n_grid >= n:
+        density = kde(values)
+    else:
+        # The KDE has support outside the data range, so extend the grid past
+        # it; otherwise the interpolation would clamp at the edges and
+        # flatten the tails.
+        pad = 3 * float(kde.scotts_factor()) * float(np.std(values))
+        lo = float(values.min()) - pad
+        hi = float(values.max()) + pad
+        grid = np.linspace(lo, hi, n_grid)
+        density = np.interp(values, grid, kde(grid))
 
     # Normalize so max == 1
     dmax = density.max()
@@ -84,6 +107,7 @@ def offset_quasirandom(
     varwidth: bool = False,
     group_count: int | None = None,
     total_count: int | None = None,
+    random_state: RandomStateLike | None = None,
 ) -> NDArray[np.float64]:
     """
     Compute quasi-random x-offsets for a single group.
@@ -99,8 +123,8 @@ def offset_quasirandom(
     bandwidth
         Bandwidth adjustment for KDE.
     nbins
-        Number of bins for density estimation (unused, kept for
-        API compatibility).
+        Number of bins for the density estimate. *None* picks a grid from
+        the group size.
     varwidth
         If *True*, scale width by relative group size.
     group_count
@@ -124,7 +148,7 @@ def offset_quasirandom(
 
     # Base jitter values in (-0.5, 0.5)
     if method == "pseudorandom":
-        rng = np.random.default_rng()
+        rng = resolve_random_state(random_state)
         jitter = rng.uniform(-0.5, 0.5, size=n)
     else:
         # quasirandom (default): van der Corput sequence
@@ -157,6 +181,7 @@ def offset_beeswarm(
     side: int = 0,
     priority: str = "ascending",
     point_size: float | None = None,
+    random_state: RandomStateLike | None = None,
 ) -> NDArray[np.float64]:
     """
     Compute beeswarm x-offsets for a single group.
@@ -179,6 +204,9 @@ def offset_beeswarm(
     point_size
         Physical size of a point in data units.  If *None* an
         estimate is derived from the data range.
+    random_state
+        Seed or generator for the RNG used when ``priority="random"``.  *None*
+        means non-reproducible output.
 
     Returns
     -------
@@ -198,7 +226,7 @@ def offset_beeswarm(
     point_size *= cex
 
     if method in ("swarm", "compactswarm"):
-        return _swarm(values, point_size, method, priority, side)
+        return _swarm(values, point_size, method, priority, side, random_state)
     if method in ("center", "centre"):
         return _grid(values, point_size, side, mode="center")
     if method == "hex":
@@ -208,14 +236,16 @@ def offset_beeswarm(
 
 
 def _order_indices(
-    values: NDArray[np.float64], priority: str
+    values: NDArray[np.float64],
+    priority: str,
+    random_state: RandomStateLike | None = None,
 ) -> NDArray[np.intp]:
     """Return indices in the desired placement order."""
     if priority == "descending":
         return np.argsort(-values)
     if priority == "random":
         idx = np.arange(len(values))
-        np.random.default_rng().shuffle(idx)
+        resolve_random_state(random_state).shuffle(idx)
         return idx
     if priority == "density":
         from scipy.stats import gaussian_kde
@@ -238,6 +268,7 @@ def _swarm(
     method: str,
     priority: str,
     side: int,
+    random_state: RandomStateLike | None = None,
 ) -> NDArray[np.float64]:
     """
     Core swarm algorithm: place points one at a time, shifting
@@ -245,47 +276,106 @@ def _swarm(
     """
     n = len(values)
     offsets = np.zeros(n, dtype=np.float64)
-    order = _order_indices(values, priority)
+    order = _order_indices(values, priority, random_state)
 
-    placed_y = np.empty(0, dtype=np.float64)
-    placed_x = np.empty(0, dtype=np.float64)
+    # Preallocate the "already placed" buffers and track a write cursor.
+    # np.append() reallocates and copies both arrays on every one of the n
+    # iterations, so the loop is quadratic in allocation traffic on top of
+    # its quadratic scan.
+    placed_y = np.empty(n, dtype=np.float64)
+    placed_x = np.empty(n, dtype=np.float64)
 
-    for idx in order:
+    for n_placed, idx in enumerate(order):
         y_i = values[idx]
 
-        if len(placed_y) == 0:
-            offsets[idx] = 0.0
-            placed_y = np.append(placed_y, y_i)
-            placed_x = np.append(placed_x, 0.0)
-            continue
-
-        # Find all previously placed points within point_size
-        # distance on the data axis
-        dy = np.abs(placed_y - y_i)
-        neighbours = dy < point_size
-
-        if not neighbours.any():
+        if n_placed == 0:
             offsets[idx] = 0.0
         else:
-            # For each overlapping neighbour, compute the
-            # minimum horizontal distance needed
-            neighbour_x = placed_x[neighbours]
-            neighbour_dy = dy[neighbours]
+            # Only the entries written so far are meaningful, so view the
+            # buffers up to the cursor rather than the whole allocation.
+            py = placed_y[:n_placed]
+            # Find all previously placed points within point_size
+            # distance on the data axis
+            dy = np.abs(py - y_i)
+            neighbours = dy < point_size
 
-            # From the overlap circle: dx² + dy² >= d²
-            # => dx >= sqrt(d² - dy²)
-            min_dx = np.sqrt(np.maximum(point_size**2 - neighbour_dy**2, 0))
-
-            if method == "compactswarm":
-                x_i = _compact_place(neighbour_x, min_dx, side)
+            if not neighbours.any():
+                offsets[idx] = 0.0
             else:
-                x_i = _swarm_place(neighbour_x, min_dx, side)
-            offsets[idx] = x_i
+                # For each overlapping neighbour, compute the
+                # minimum horizontal distance needed
+                neighbour_x = placed_x[:n_placed][neighbours]
+                neighbour_dy = dy[neighbours]
 
-        placed_y = np.append(placed_y, y_i)
-        placed_x = np.append(placed_x, offsets[idx])
+                # From the overlap circle: dx² + dy² >= d²
+                # => dx >= sqrt(d² - dy²)
+                min_dx = np.sqrt(
+                    np.maximum(point_size**2 - neighbour_dy**2, 0)
+                )
+
+                if method == "compactswarm":
+                    x_i = _compact_place(neighbour_x, min_dx, side)
+                else:
+                    x_i = _swarm_place(neighbour_x, min_dx, side)
+                offsets[idx] = x_i
+
+        placed_y[n_placed] = y_i
+        placed_x[n_placed] = offsets[idx]
 
     return offsets
+
+
+def _candidates(
+    neighbour_x: NDArray[np.float64],
+    min_dx: NDArray[np.float64],
+    side: int,
+) -> NDArray[np.float64]:
+    """
+    Candidate x-positions: each neighbour's two touching positions, plus 0.
+    """
+    cands = np.empty(2 * len(neighbour_x) + 1, dtype=np.float64)
+    cands[:-1:2] = neighbour_x + min_dx
+    cands[1:-1:2] = neighbour_x - min_dx
+    cands[-1] = 0.0
+
+    # Filter by the side constraint.
+    if side == 1:
+        cands = cands[cands >= -1e-10]
+    elif side == -1:
+        cands = cands[cands <= 1e-10]
+
+    if not len(cands):
+        cands = np.array([0.0])
+    return cands
+
+
+def _outer_edge(
+    neighbour_x: NDArray[np.float64],
+    min_dx: NDArray[np.float64],
+    side: int,
+) -> float:
+    """Where to place a point when no candidate position is clear."""
+    if side >= 0:
+        return float(np.max(neighbour_x + min_dx))
+    return float(np.min(neighbour_x - min_dx))
+
+
+def _clear_mask(
+    cands: NDArray[np.float64],
+    neighbour_x: NDArray[np.float64],
+    min_dx: NDArray[np.float64],
+) -> NDArray[np.bool_]:
+    """
+    For each candidate, whether it clears every neighbour.
+
+    All candidates are tested in one (candidates x neighbours) comparison.
+    The loop this replaces made that same comparison once per candidate, in
+    its own NumPy call, so its cost was quadratic in the neighbour count.
+    """
+    clear = np.abs(neighbour_x[None, :] - cands[:, None]) >= (
+        min_dx[None, :] - 1e-10
+    )
+    return clear.all(axis=1)
 
 
 def _swarm_place(
@@ -297,39 +387,14 @@ def _swarm_place(
     Find the closest valid x-position to 0 that does not overlap
     with any neighbour.
     """
-    # Candidate positions: for each neighbour, try placing on
-    # both sides
-    candidates = []
-    for nx, mdx in zip(neighbour_x, min_dx):
-        candidates.append(nx + mdx)
-        candidates.append(nx - mdx)
-    candidates.append(0.0)
-
-    # Filter by side constraint
-    if side == 1:
-        candidates = [c for c in candidates if c >= -1e-10]
-    elif side == -1:
-        candidates = [c for c in candidates if c <= 1e-10]
-
-    if not candidates:
-        candidates = [0.0]
-
-    # Check each candidate for validity (no overlap)
-    valid = []
-    for c in candidates:
-        dists = np.abs(neighbour_x - c)
-        if np.all(dists >= min_dx - 1e-10):
-            valid.append(c)
-
-    if valid:
-        # Return the candidate closest to 0
-        valid_arr = np.array(valid)
-        return float(valid_arr[np.argmin(np.abs(valid_arr))])
+    cands = _candidates(neighbour_x, min_dx, side)
+    good = cands[_clear_mask(cands, neighbour_x, min_dx)]
+    if len(good):
+        # Of the positions that clear, take the one nearest 0.
+        return float(good[np.argmin(np.abs(good))])
 
     # Fallback: place at outer edge
-    if side >= 0:
-        return float(np.max(neighbour_x + min_dx))
-    return float(np.min(neighbour_x - min_dx))
+    return _outer_edge(neighbour_x, min_dx, side)
 
 
 def _compact_place(
@@ -341,32 +406,17 @@ def _compact_place(
     Compact placement: find the position closest to 0 that
     does not overlap, searching outward from centre.
     """
-    # Generate candidate positions more densely
-    candidates = [0.0]
-    for nx, mdx in zip(neighbour_x, min_dx):
-        candidates.append(nx + mdx)
-        candidates.append(nx - mdx)
+    cands = _candidates(neighbour_x, min_dx, side)
+    # Search outward from the centre. A stable sort keeps the candidate
+    # order within a distance band, matching the original sort.
+    cands = cands[np.argsort(np.abs(cands), kind="stable")]
 
-    if side == 1:
-        candidates = [c for c in candidates if c >= -1e-10]
-    elif side == -1:
-        candidates = [c for c in candidates if c <= 1e-10]
-
-    if not candidates:
-        candidates = [0.0]
-
-    # Sort by distance from 0 (compact placement)
-    candidates.sort(key=abs)
-
-    for c in candidates:
-        dists = np.abs(neighbour_x - c)
-        if np.all(dists >= min_dx - 1e-10):
-            return float(c)
+    ok = _clear_mask(cands, neighbour_x, min_dx)
+    if ok.any():
+        return float(cands[np.argmax(ok)])
 
     # Fallback
-    if side >= 0:
-        return float(np.max(neighbour_x + min_dx))
-    return float(np.min(neighbour_x - min_dx))
+    return _outer_edge(neighbour_x, min_dx, side)
 
 
 def _grid(
@@ -441,6 +491,7 @@ def corral_points(
     offsets: NDArray[np.float64],
     method: str = "none",
     width: float = 0.9,
+    random_state: RandomStateLike | None = None,
 ) -> NDArray[np.float64]:
     """
     Handle runaway points that extend beyond the corral boundary.
@@ -457,6 +508,9 @@ def corral_points(
         ``"omit"``: set to NaN.
     width
         Half-width of the corral region.
+    random_state
+        Seed or generator for the RNG used when ``method="random"``.  *None*
+        means non-reproducible output.
     """
     if method == "none":
         return offsets
@@ -476,7 +530,7 @@ def corral_points(
             (offsets[out_of_bounds] + half) % width
         ) - half
     elif method == "random":
-        rng = np.random.default_rng()
+        rng = resolve_random_state(random_state)
         n_out = out_of_bounds.sum()
         offsets[out_of_bounds] = rng.uniform(-half, half, size=n_out)
     elif method == "omit":

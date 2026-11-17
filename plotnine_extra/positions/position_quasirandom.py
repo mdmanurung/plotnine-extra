@@ -9,9 +9,11 @@ from copy import deepcopy
 from typing import TYPE_CHECKING
 
 import numpy as np
-from plotnine._utils import groupby_apply, resolution
 from plotnine.positions.position import position
 
+from plotnine_extra._compat import groupby_apply, resolution
+
+from .._common import resolve_random_state
 from ._beeswarm_algorithms import offset_quasirandom
 
 _VALID_METHODS = {"quasirandom", "pseudorandom"}
@@ -21,6 +23,7 @@ if TYPE_CHECKING:
 
     import pandas as pd
     from plotnine.iapi import pos_scales
+    from plotnine.typing import RandomStateLike
 
 
 class position_quasirandom(position):
@@ -52,6 +55,13 @@ class position_quasirandom(position):
     dodge_width :
         Amount by which to dodge groups that share the same
         position.  ``None`` means no dodging.
+    random_state :
+        Integer seed, or a NumPy ``RandomState``/``Generator``, for the
+        random number generator.  Only has an effect when
+        ``method="pseudorandom"``; the default ``"quasirandom"`` method is
+        deterministic.  ``None`` (the default) draws fresh randomness on
+        every draw, so the same plot renders differently each time -- pass
+        an integer to make a figure reproducible.
     """
 
     REQUIRED_AES = {"x", "y"}
@@ -64,6 +74,7 @@ class position_quasirandom(position):
         bandwidth: float = 0.5,
         nbins: Optional[int] = None,
         dodge_width: Optional[float] = None,
+        random_state: Optional[RandomStateLike] = None,
     ):
         if method not in _VALID_METHODS:
             msg = (
@@ -78,12 +89,16 @@ class position_quasirandom(position):
             "bandwidth": bandwidth,
             "nbins": nbins,
             "dodge_width": dodge_width,
+            "random_state": random_state,
         }
 
     def setup_params(self, data: pd.DataFrame) -> dict:
         params = deepcopy(self.params)
         if params["width"] is None:
             params["width"] = resolution(data["x"]) * 0.4
+        # Resolve the seed to a generator once, so every group advances a
+        # single stream instead of restarting from the same seed.
+        params["random_state"] = resolve_random_state(params["random_state"])
         return params
 
     @classmethod
@@ -98,6 +113,7 @@ class position_quasirandom(position):
             data = _dodge_groups(data, dodge_width)
 
         total_count = len(data) if params["varwidth"] else None
+        random_state = params["random_state"]
 
         def _jitter_group(gdf: pd.DataFrame) -> pd.DataFrame:
             gdf = gdf.copy()
@@ -111,6 +127,7 @@ class position_quasirandom(position):
                 varwidth=params["varwidth"],
                 group_count=len(gdf),
                 total_count=total_count,
+                random_state=random_state,
             )
             gdf["x"] = gdf["x"] + offsets
             return gdf

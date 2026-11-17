@@ -49,3 +49,13 @@ plot_spacer
 -----------
 
 .. autofunction:: plot_spacer
+
+guide_area
+----------
+
+.. autofunction:: guide_area
+
+inset_element
+-------------
+
+.. autofunction:: inset_element

@@ -22,12 +22,37 @@ from plotnine_extra import geom_pointdensity, theme_pubr
 
 ## Positions
 
-- `position_beeswarm`: accepts `method`, `priority`, `side`, and `corral`.
-  Invalid option names raise `ValueError`.
-- `position_quasirandom`: accepts `method`, `width`, and related categorical
-  jitter controls. Invalid option names raise `ValueError`.
+- `position_beeswarm`: accepts `method`, `priority`, `side`, `corral`, and
+  `random_state`. Invalid option names raise `ValueError`.
+- `position_quasirandom`: accepts `method`, `width`, `random_state`, and
+  related categorical jitter controls. Invalid option names raise
+  `ValueError`.
 - `position_disjoint_ranges`, `position_lineartrans`: range and linear
   transform position helpers.
+
+`random_state` (not `seed`) matches plotnine's own `position_jitter`: pass an
+integer for reproducibility, a NumPy `RandomState`/`Generator` to supply your
+own stream, or leave it `None` for fresh randomness on every draw. The
+defaults are deterministic, so the parameter only matters for the opt-in random
+options — `priority="random"` and `corral="random"` for beeswarm,
+`method="pseudorandom"` for quasirandom. `geom_text_repel` takes
+`random_state` too.
+
+## Composition
+
+Re-exported from plotnine, so they track upstream:
+
+- Operators on `ggplot`: `|` (`Beside`), `/` (`Stack`), `+` (`Wrap` grid),
+  `-`, `&`, `*`.
+- Classes: `Compose`, `Beside`, `Stack`, `Wrap`.
+- Functions: `plot_layout` (nrow, ncol, widths, heights), `plot_annotation`
+  (title, subtitle, caption, footer), `plot_spacer`, `guide_area`, and
+  `inset_element`.
+- ggpubr-style wrappers live in `plotnine_extra.utils`: `ggarrange` and
+  `annotate_figure`.
+
+All of these require plotnine 0.16, which is this package's minimum, so there is
+no version gating to work around.
 
 ## Themes, Palettes, and Helpers
 
@@ -50,3 +75,12 @@ from plotnine_extra import geom_pointdensity, theme_pubr
   `scale_fill_multi`, and `scale_listed`.
 - Manual position scales: `scale_x_manual`, `scale_y_manual`.
 - Inside axes: `coord_axes_inside` plus `apply_axes_inside`.
+
+## Inherited from plotnine 0.16
+
+`plotnine_extra` re-exports plotnine's full public API, so these are available
+from it with no code of our own: `coord_polar`, `coord_radial`, `sec_axis`,
+`dup_axis`, `geom_contour`, `geom_contour_filled`, `geom_density_2d_filled`,
+`stat_contour`, `stat_contour_filled`, `stat_density_2d_filled`, and `I(...)`
+for literal aesthetic values. Prefer these over hand-rolled equivalents.
+

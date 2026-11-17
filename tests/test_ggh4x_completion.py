@@ -128,8 +128,7 @@ def test_at_panel_filters_layer_to_matching_layout_rows():
     layer = at_panel(geom_point(color="red"), "g == 'b'")
     plot = ggplot(df, aes("x", "y")) + layer + facet_wrap2("g")
 
-    plot._build()
-    out = plot._build_objs.layers[0].data
+    out = plot.layer_data(0)
 
     assert out["PANEL"].astype(int).unique().tolist() == [2]
 

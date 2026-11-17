@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Literal
 from plotnine.facets.facet_wrap import facet_wrap
 from plotnine.facets.strips import Strips, strip
 
-from ..guides import apply_axis_guides
+from ._axis_guides import AxisGuideFacet
 
 if TYPE_CHECKING:
     from typing import Optional, Sequence
@@ -18,7 +18,7 @@ if TYPE_CHECKING:
     from plotnine.iapi import layout_details
 
 
-class facet_nested_wrap(facet_wrap):
+class facet_nested_wrap(AxisGuideFacet, facet_wrap):
     """
     Wrapped facets with nested strips.
 
@@ -119,10 +119,6 @@ class facet_nested_wrap(facet_wrap):
             bleed=self.bleed,
         )
         return Strips([s])
-
-    def set_limits_breaks_and_labels(self, panel_params, ax):
-        super().set_limits_breaks_and_labels(panel_params, ax)
-        apply_axis_guides(self, panel_params, ax)
 
 
 class _nested_wrap_strip(strip):

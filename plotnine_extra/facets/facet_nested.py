@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Literal
 from plotnine.facets.facet_grid import facet_grid
 from plotnine.facets.strips import Strips, strip
 
-from ..guides import apply_axis_guides
+from ._axis_guides import AxisGuideFacet
 
 if TYPE_CHECKING:
     from typing import Optional, Sequence
@@ -19,7 +19,7 @@ if TYPE_CHECKING:
     from plotnine.typing import FacetSpaceRatios
 
 
-class facet_nested(facet_grid):
+class facet_nested(AxisGuideFacet, facet_grid):
     """
     Grid facets with nested strips.
 
@@ -138,10 +138,6 @@ class facet_nested(facet_grid):
             lst.append(s)
 
         return Strips(lst)
-
-    def set_limits_breaks_and_labels(self, panel_params, ax):
-        super().set_limits_breaks_and_labels(panel_params, ax)
-        apply_axis_guides(self, panel_params, ax)
 
 
 class _nested_strip(strip):

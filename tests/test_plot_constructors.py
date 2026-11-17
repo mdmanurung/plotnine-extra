@@ -71,6 +71,12 @@ def test_ggscatter_accepts_shape_mapping():
     plot.draw(show=False)
 
 
+def test_ggpaired_default_color_renders():
+    plot = ggpaired(grouped_data(), "group", "value", id="subject")
+
+    plot.draw(show=False)
+
+
 def test_ggbarplot_summary_deduplicates_aesthetic_groups():
     data = grouped_data()
 
@@ -116,8 +122,7 @@ def test_ggvolcano_labels_selected_points():
     )
 
     assert isinstance(plot, ggplot)
-    built = plot.build_test()
-    assert {"left", "right"} == set(built.layers[-1].data["label"])
+    assert {"left", "right"} == set(plot.layer_data(-1)["label"])
     assert isinstance(VolcanoPlot(data), ggplot)
 
 

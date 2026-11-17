@@ -13,6 +13,8 @@ from typing import TYPE_CHECKING, Any, Callable
 
 import numpy as np
 
+from plotnine_extra._compat import p9GridSpec
+
 if TYPE_CHECKING:
     from typing import Sequence
 
@@ -42,8 +44,11 @@ def at_panel(layer: Any, expr: PanelSelector) -> Any:
     """
     if isinstance(layer, list):
         return [at_panel(item, expr) for item in layer]
-    if not hasattr(layer, "compute_aesthetics") and hasattr(layer, "to_layer"):
-        layer = layer.to_layer()
+    if not hasattr(layer, "compute_aesthetics"):
+        # A geom was passed instead of a built layer; turn it into one.
+        from plotnine.layer import layer as _layer
+
+        layer = _layer(geom=layer)
 
     _install_panel_filter(layer, expr)
     return layer
@@ -113,7 +118,9 @@ def _filter_layer_data_by_panel(
     if data is None or "PANEL" not in data.columns:
         return data
 
-    layout_obj = getattr(getattr(plot, "_build_objs", None), "layout", None)
+    # ``ggplot.build()`` works on a copy and sets up ``plot.layout`` before
+    # layer aesthetics are computed, so the copy passed in here has it.
+    layout_obj = getattr(plot, "layout", None)
     layout = getattr(layout_obj, "layout", None)
     if layout is None or not len(layout):
         return data
@@ -153,14 +160,12 @@ def _apply_panel_size_spec(
     facet._force_panel_total_width = total_width
     facet._force_panel_total_height = total_height
 
-    if hasattr(facet, "_plotnine_extra_original_get_panels_gridspec"):
+    if hasattr(facet, "_plotnine_extra_original_gridspec"):
         return
-    original = facet._get_panels_gridspec
-    facet._plotnine_extra_original_get_panels_gridspec = original
+    original = facet._make_gridspec
+    facet._plotnine_extra_original_gridspec = original
 
-    def _get_panels_gridspec(self):
-        from plotnine._mpl.gridspec import p9GridSpec
-
+    def _panels_gridspec(self):
         width_ratios = _ratios_for(
             getattr(self, "_panel_widths", None),
             getattr(self, "ncol", None),
@@ -170,7 +175,7 @@ def _apply_panel_size_spec(
             getattr(self, "nrow", None),
         )
         if width_ratios is None and height_ratios is None:
-            return self._plotnine_extra_original_get_panels_gridspec()
+            return self._plotnine_extra_original_gridspec()
 
         ratios = {}
         if width_ratios is not None:
@@ -185,7 +190,7 @@ def _apply_panel_size_spec(
             **ratios,
         )
 
-    facet._get_panels_gridspec = MethodType(_get_panels_gridspec, facet)
+    facet._make_gridspec = MethodType(_panels_gridspec, facet)
 
 
 def _ratios_for(

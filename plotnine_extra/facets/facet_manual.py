@@ -8,25 +8,26 @@ from typing import TYPE_CHECKING, Literal
 
 import numpy as np
 import pandas as pd
-from plotnine._utils import join_keys, match
 from plotnine.facets.facet import (
     add_missing_facets,
     combine_vars,
     eval_facet_vars,
-    facet,
 )
+from plotnine.facets.facet_wrap import facet_wrap
 from plotnine.facets.strips import Strips, strip
 
-from ..guides import apply_axis_guides
+from plotnine_extra._compat import join_keys, match, p9Axes, p9GridSpec
+
+from ._axis_guides import AxisGuideFacet
 from .scale_facet import apply_scale_facets
 
 if TYPE_CHECKING:
     from typing import Optional, Sequence, Union
 
     from matplotlib.axes import Axes
-    from plotnine._mpl.gridspec import p9GridSpec
     from plotnine.iapi import layout_details
     from plotnine.scales.scale import scale
+    from plotnine.scales.scales import Scales
 
 
 def _parse_design(design: str) -> np.ndarray:
@@ -54,7 +55,7 @@ def _parse_design(design: str) -> np.ndarray:
     return np.array(rows)
 
 
-class facet_manual(facet):
+class facet_manual(AxisGuideFacet, facet_wrap):
     """
     Manually specify panel layout via a design matrix.
 
@@ -105,6 +106,7 @@ class facet_manual(facet):
         trim_blank: bool = False,
     ):
         super().__init__(
+            facets=facets,
             scales=scales,
             shrink=shrink,
             labeller=labeller,
@@ -140,6 +142,7 @@ class facet_manual(facet):
     def compute_layout(
         self,
         data: list[pd.DataFrame],
+        scales: Scales,
     ) -> pd.DataFrame:
         if self._design_matrix is None:
             msg = "facet_manual requires a 'design' argument"
@@ -208,8 +211,10 @@ class facet_manual(facet):
                 "COLSPAN": int(col_max - col_min + 1),
                 "SCALE_X": i + 1 if self.free["x"] else 1,
                 "SCALE_Y": i + 1 if self.free["y"] else 1,
-                "AXIS_X": True,
-                "AXIS_Y": True,
+                "AXIS_X": False,
+                "AXIS_Y": False,
+                "AXIS_X_SEC": False,
+                "AXIS_Y_SEC": False,
             }
             # Add facet variable values
             if self.vars and i < len(base):
@@ -230,8 +235,32 @@ class facet_manual(facet):
 
         self.nrow = int(design.shape[0])
         self.ncol = int(design.shape[1])
+        self._set_default_axis_sides(layout, scales)
         self._apply_axis_flags(layout)
         return layout
+
+    def _set_default_axis_sides(
+        self,
+        layout: pd.DataFrame,
+        scales: Scales,
+    ) -> None:
+        """
+        Put the primary x/y axes on the sides the position scales request.
+
+        Mirrors what plotnine's own facets do: the x axis goes on the
+        bottom row unless ``scale_x(position="top")`` moved it, and likewise
+        for y on the left column. The ``*_SEC`` flags start off, since a
+        secondary axis is an explicit opt-in via ``sec_axis``/``dup_axis``.
+        """
+        x_side, y_side = scales.axis_positions
+        if x_side == "top":
+            layout["AXIS_X"] = layout["ROW"] == layout["ROW"].min()
+        else:
+            layout["AXIS_X"] = layout["ROW"] == layout["ROW"].max()
+        if y_side == "right":
+            layout["AXIS_Y"] = layout["COL"] == layout["COL"].max()
+        else:
+            layout["AXIS_Y"] = layout["COL"] == layout["COL"].min()
 
     def _trim_design(
         self,
@@ -343,9 +372,7 @@ class facet_manual(facet):
         s = strip(self.vars, layout_info, self, ax, "top")
         return Strips([s])
 
-    def _get_panels_gridspec(self) -> "p9GridSpec":
-        from plotnine._mpl.gridspec import p9GridSpec
-
+    def _make_gridspec(self) -> p9GridSpec:
         ratios = {}
         if self._panel_widths is not None:
             ratios["width_ratios"] = self._panel_widths
@@ -360,17 +387,26 @@ class facet_manual(facet):
             **ratios,
         )
 
-    def _make_axes(self) -> list["Axes"]:
-        self._panels_gridspec = self._get_panels_gridspec()
+    def _make_axes(self) -> tuple[p9GridSpec, list["Axes"]]:
+        # Unlike plotnine's own facets, panels may span several cells, so
+        # each panel is placed from its own ROWSPAN/COLSPAN slice rather
+        # than from a positional index into the grid.
+        gs = self._make_gridspec()
+        self._panels_gridspec = gs
+        projection = (
+            p9Axes.name
+            if self.plot.coordinates._projection is None
+            else self.plot.coordinates._projection
+        )
         axs = []
         for _, row in self.layout.layout.sort_values("PANEL").iterrows():
             r0 = int(row["ROW"]) - 1
             c0 = int(row["COL"]) - 1
             r1 = r0 + int(row.get("ROWSPAN", 1))
             c1 = c0 + int(row.get("COLSPAN", 1))
-            spec = self._panels_gridspec[r0:r1, c0:c1]
-            axs.append(self.figure.add_subplot(spec))
-        return axs
+            spec = gs[r0:r1, c0:c1]
+            axs.append(self.figure.add_subplot(spec, projection=projection))
+        return gs, axs
 
     def init_scales(
         self,
@@ -402,10 +438,6 @@ class facet_manual(facet):
         apply_scale_facets(scales, layout, scale_facets)
 
         return scales
-
-    def set_limits_breaks_and_labels(self, panel_params, ax):
-        super().set_limits_breaks_and_labels(panel_params, ax)
-        apply_axis_guides(self, panel_params, ax)
 
 
 def _is_empty_design_cell(cell: object) -> bool:

@@ -8,7 +8,6 @@ existing stats and composition primitives.
 
 from __future__ import annotations
 
-from copy import deepcopy
 from itertools import combinations
 from typing import TYPE_CHECKING
 
@@ -231,8 +230,7 @@ def get_breaks(
     if axis not in {"x", "y"}:
         raise ValueError("axis must be 'x' or 'y'")
 
-    built = deepcopy(plot)
-    built._build()
+    built = plot.build()
     layout = getattr(built, "layout", None)
     panel_params = getattr(layout, "panel_params", None)
     if panel_params is None:

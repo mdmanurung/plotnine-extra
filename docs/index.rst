@@ -12,6 +12,14 @@ plot composition operators, and animation support.
 This single import gives you the full plotnine API **plus** every extra
 component shipped by plotnine-extra.
 
+``plotnine-extra`` requires **plotnine 0.16** and **Python 3.11+**. Because it
+re-exports plotnine's public API, everything plotnine 0.16 added is reachable
+from ``plotnine_extra`` too, with no code of our own — ``coord_polar``,
+``coord_radial``, ``sec_axis``, ``dup_axis``, ``geom_contour``,
+``geom_contour_filled``, ``geom_density_2d_filled``, ``stat_contour``,
+``stat_contour_filled``, ``stat_density_2d_filled``, and ``I(...)`` for
+literal aesthetic values.
+
 Extra Components
 ----------------
 
@@ -26,7 +34,8 @@ Extra Components
 ``stat_friedman_test``, ``stat_pvalue_manual``, ``stat_pwc``
 
 **Composition**: ``Compose``, ``Beside``, ``Stack``, ``Wrap``,
-``plot_layout``, ``plot_annotation``, ``plot_spacer``
+``plot_layout``, ``plot_annotation``, ``plot_spacer``, ``guide_area``,
+``inset_element``
 
 **Animation**: ``PlotnineAnimation``
 

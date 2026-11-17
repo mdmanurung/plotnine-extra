@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import hashlib
 from copy import copy
+from dataclasses import dataclass
 from itertools import islice
 from typing import TYPE_CHECKING
 
@@ -202,6 +203,7 @@ def guide_dendro(
     )
 
 
+@dataclass
 class guide_stringlegend(guide_legend):  # noqa: N801
     """
     Text-only legend guide.
@@ -211,14 +213,22 @@ class guide_stringlegend(guide_legend):  # noqa: N801
     """
 
     def __post_init__(self):
-        super().__post_init__()
-        self._elements_cls = GuideElementsStringLegend
+        # plotnine 0.16.0a15 dropped ``guide_legend.__post_init__``. A
+        # dataclass only calls ``__post_init__`` when the class defines it at
+        # decoration time, hence the ``@dataclass`` above.
+        parent_post_init = getattr(super(), "__post_init__", None)
+        if parent_post_init is not None:
+            parent_post_init()
         self.kind = "stringlegend"
         self.options = {"ncol": self.ncol, "nrow": self.nrow}
 
-    def setup(self, guides):  # noqa: D102
-        super().setup(guides)
-        self._plot = guides.plot
+    @property
+    def _elements_cls(self) -> type[GuideElementsLegend]:
+        return GuideElementsStringLegend
+
+    def _bind_source(self, plot):
+        super()._bind_source(plot)
+        self._plot = plot
 
     def __radd__(self, other):
         other.guides.color = self
@@ -238,10 +248,17 @@ class guide_stringlegend(guide_legend):  # noqa: N801
         targets.legend_title = title_box._text  # type: ignore[attr-defined]
 
         colour_values = _legend_layer_text_colours(self)
-        props = {"ha": elements.text.ha, "va": elements.text.va}
+        text = elements.text
+        # plotnine gives one horizontal/vertical alignment per label.
+        alignments = list(zip(text.has, text.vas))
         labels = [
-            TextArea(str(label), textprops={**props, "color": colour})
-            for label, colour in zip(self.key["label"], colour_values)
+            TextArea(
+                str(label),
+                textprops={"ha": ha, "va": va, "color": colour},
+            )
+            for label, colour, (ha, va) in zip(
+                self.key["label"], colour_values, alignments
+            )
         ]
         targets.legend_text_legend = [
             label._text
@@ -312,14 +329,14 @@ class guide_stringlegend(guide_legend):  # noqa: N801
 
 
 def apply_axis_guides(
-    facet_obj: object,
+    plot: object,
     panel_params: "panel_view",
     ax: "Axes",
 ) -> None:
     """Apply plotnine-extra axis guide specs to a matplotlib axis."""
     callbacks = []
     for axis in ("x", "y"):
-        spec = _resolve_axis_spec(facet_obj, panel_params, axis)
+        spec = _resolve_axis_spec(plot, panel_params, axis)
         if spec is not None:
             _apply_axis_spec(ax, panel_params, axis, spec)
             callbacks.append(
@@ -331,7 +348,45 @@ def apply_axis_guides(
                 )
             )
     if callbacks:
-        _register_axis_theme_callbacks(facet_obj, callbacks)
+        _register_axis_theme_callbacks(plot, callbacks)
+
+
+class _AxisGuideCoord:
+    """
+    Mixin that applies plotnine-extra axis guides after a panel is set up.
+
+    plotnine 0.16 moved per-panel axes setup from
+    ``Facet.set_limits_breaks_and_labels`` (removed) to
+    ``coord.setup_ax(ax, panel_params, layout_info)``. The base call sets
+    limits, breaks, and labels; this runs the axis-guide specs immediately
+    afterwards so they can override them.
+    """
+
+    def setup_ax(self, ax, panel_params, layout_info) -> None:
+        super().setup_ax(ax, panel_params, layout_info)
+        apply_axis_guides(self._owner, panel_params, ax)
+
+
+def install_axis_guide_hook(plot: object) -> None:
+    """
+    Make *plot*'s coordinate system apply plotnine-extra axis guides.
+
+    Called from :meth:`plotnine_extra.facets.AxisGuideFacet.setup`, which runs
+    once per draw after every ``+`` operator has been applied -- so
+    ``plot.coordinates`` is final and its ``_owner`` is already bound.
+
+    The hook is installed by giving the coord a dynamic subclass rather than
+    by assigning a bound closure to the instance. plotnine copies the coord
+    on every ``+ coord_*()`` and on ``deepcopy(ggplot)``; an instance
+    attribute would survive that copy while still closing over the *previous*
+    coord, so the base ``setup_ax`` would run against a stale object.
+    """
+    coord = plot.coordinates
+    if isinstance(coord, _AxisGuideCoord):
+        return
+    coord.__class__ = type(
+        "_PlotnineExtraAxisGuideCoord", (_AxisGuideCoord, type(coord)), {}
+    )
 
 
 class GuideElementsStringLegend(GuideElementsLegend):
@@ -343,10 +398,9 @@ class GuideElementsStringLegend(GuideElementsLegend):
 
 
 def _register_axis_theme_callbacks(
-    facet_obj: object,
+    plot: object,
     callbacks: list[tuple["Axes", "panel_view", str, GuideAxisSpec]],
 ) -> None:
-    plot = getattr(facet_obj, "plot", None)
     if plot is None:
         return
 
@@ -401,7 +455,7 @@ def _register_stringlegend_theme_callback(
 
 
 def _resolve_axis_spec(
-    facet_obj: object,
+    plot: object,
     panel_params: "panel_view",
     axis: str,
 ) -> GuideAxisSpec | None:
@@ -410,7 +464,6 @@ def _resolve_axis_spec(
     if isinstance(spec, GuideAxisSpec):
         return spec
 
-    plot = getattr(facet_obj, "plot", None)
     fallback = getattr(plot, "_plotnine_extra_axis_guides", {})
     spec = fallback.get(axis)
     return spec if isinstance(spec, GuideAxisSpec) else None
