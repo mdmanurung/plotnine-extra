@@ -98,6 +98,42 @@ jobs:
         run: |
           python -m pytest tests/ -v --ignore=tests/test_benchmarks.py
 
+  downstream:
+    # ggann and annplyr build on this package. Run their own suites against
+    # this checkout so a change here cannot break them unnoticed. Blocking.
+    # Their tests are not in the wheels, so clone the repos into vendor/.
+    runs-on: ubuntu-latest
+    env:
+      ANNPLYR_REF: bb80d1285d41a1e0470311bb887018433c5acc80
+      GGANN_REF: fix/plotnine-0.16-compat
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: mdmanurung/annplyr
+          ref: ${{ env.ANNPLYR_REF }}
+          path: vendor/annplyr
+      - uses: actions/checkout@v4
+        with:
+          repository: mdmanurung/ggann
+          ref: ${{ env.GGANN_REF }}
+          path: vendor/ggann
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install this checkout with both downstream packages
+        run: |
+          pip install -e . -e vendor/annplyr -e "vendor/ggann[test]"
+      - name: Show resolved versions
+        run: |
+          python -c "import plotnine, plotnine_extra, annplyr, ggann; print('plotnine', plotnine.__version__)"
+      - name: annplyr tests
+        working-directory: vendor/annplyr
+        run: python -m pytest -q
+      - name: ggann tests
+        working-directory: vendor/ggann
+        run: python -m pytest -q
+
   notebooks:
     runs-on: ubuntu-latest
     steps:
