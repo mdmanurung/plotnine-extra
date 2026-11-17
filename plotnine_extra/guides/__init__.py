@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import hashlib
 from copy import copy
+from dataclasses import dataclass
 from itertools import islice
 from typing import TYPE_CHECKING
 
@@ -202,6 +203,7 @@ def guide_dendro(
     )
 
 
+@dataclass
 class guide_stringlegend(guide_legend):  # noqa: N801
     """
     Text-only legend guide.
@@ -211,10 +213,18 @@ class guide_stringlegend(guide_legend):  # noqa: N801
     """
 
     def __post_init__(self):
-        super().__post_init__()
-        self._elements_cls = GuideElementsStringLegend
+        # plotnine 0.16.0a15 dropped ``guide_legend.__post_init__``. A
+        # dataclass only calls ``__post_init__`` when the class defines it at
+        # decoration time, hence the ``@dataclass`` above.
+        parent_post_init = getattr(super(), "__post_init__", None)
+        if parent_post_init is not None:
+            parent_post_init()
         self.kind = "stringlegend"
         self.options = {"ncol": self.ncol, "nrow": self.nrow}
+
+    @property
+    def _elements_cls(self) -> type[GuideElementsLegend]:
+        return GuideElementsStringLegend
 
     def _bind_source(self, plot):
         super()._bind_source(plot)
