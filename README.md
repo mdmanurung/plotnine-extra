@@ -5,8 +5,10 @@ Extension package for [plotnine](https://github.com/has2k1/plotnine) that adds e
 ## Installation
 
 ```bash
-pip install plotnine-extra
+pip install "plotnine-extra @ git+https://github.com/mdmanurung/plotnine-extra"
 ```
+
+The current version (0.3.1) is not on PyPI yet.
 
 ### Requirements
 
@@ -190,7 +192,8 @@ Because the package re-exports plotnine's whole public API, everything plotnine
 > so they track upstream automatically. Some stat/guide/facet helpers still use
 > plotnine's internal APIs and need adjustment across plotnine releases — see
 > [`UPSTREAM_SYNC.md`](UPSTREAM_SYNC.md) for the current list and how syncing
-> works.
+> works. Private plotnine names are gathered in `plotnine_extra/_compat.py` and
+> checked by `pytest -m canary`.
 
 ## Development
 
@@ -199,6 +202,16 @@ git clone https://github.com/mdmanurung/plotnine-extra.git
 cd plotnine-extra
 pip install -e ".[all]"
 ```
+
+### Testing
+
+```bash
+python -m pytest tests/ --ignore=tests/test_benchmarks.py
+python -m pytest -m canary   # fast checks of the plotnine coupling
+```
+
+See [`UPSTREAM_SYNC.md`](UPSTREAM_SYNC.md) for `plotnine_extra/_compat.py` and
+the `downstream` CI job.
 
 ## Publishing to PyPI
 

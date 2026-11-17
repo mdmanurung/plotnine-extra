@@ -33,11 +33,11 @@ Extra Components
 ``stat_anova_test``, ``stat_kruskal_test``, ``stat_welch_anova_test``,
 ``stat_friedman_test``, ``stat_pvalue_manual``, ``stat_pwc``
 
-**Composition**: ``Compose``, ``Beside``, ``Stack``, ``Wrap``,
+**Composition** (re-exported from plotnine): ``Compose``, ``Beside``, ``Stack``, ``Wrap``,
 ``plot_layout``, ``plot_annotation``, ``plot_spacer``, ``guide_area``,
 ``inset_element``
 
-**Animation**: ``PlotnineAnimation``
+**Animation** (re-exported from plotnine): ``PlotnineAnimation``
 
 
 .. toctree::
