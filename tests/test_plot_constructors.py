@@ -122,8 +122,7 @@ def test_ggvolcano_labels_selected_points():
     )
 
     assert isinstance(plot, ggplot)
-    built = plot.build_test()
-    assert {"left", "right"} == set(built.layers[-1].data["label"])
+    assert {"left", "right"} == set(plot.layer_data(-1)["label"])
     assert isinstance(VolcanoPlot(data), ggplot)
 
 

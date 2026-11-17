@@ -116,7 +116,9 @@ def _filter_layer_data_by_panel(
     if data is None or "PANEL" not in data.columns:
         return data
 
-    layout_obj = getattr(getattr(plot, "_build_objs", None), "layout", None)
+    # ``ggplot.build()`` works on a copy and sets up ``plot.layout`` before
+    # layer aesthetics are computed, so the copy passed in here has it.
+    layout_obj = getattr(plot, "layout", None)
     layout = getattr(layout_obj, "layout", None)
     if layout is None or not len(layout):
         return data

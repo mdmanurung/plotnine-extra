@@ -499,14 +499,16 @@ def test_facet_manual_empty_cells_trim_blank_and_remove_labels():
     )
 
     p.draw(show=False)
-    layout = p._build_objs.layout.layout
+    # ``ggplot.build()`` records facet state on its own copy (``p.built``).
+    facet = p.built.facet
+    layout = p.built.layout.layout
 
-    assert p.facet.nrow == 1
-    assert p.facet.ncol == 1
-    assert p.facet.widths == [1, 3]
-    assert p.facet.heights == [2, 1]
-    assert p.facet._panel_widths == [3]
-    assert p.facet._panel_heights == [1]
+    assert facet.nrow == 1
+    assert facet.ncol == 1
+    assert facet.widths == [1, 3]
+    assert facet.heights == [2, 1]
+    assert facet._panel_widths == [3]
+    assert facet._panel_heights == [1]
     assert layout["AXIS_X"].eq(False).all()
     assert layout["AXIS_Y"].eq(True).all()
 
